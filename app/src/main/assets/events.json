@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cielo-music-2026",
+    "title": "Cielo Music Experience",
+    "date": "18 de setembro • 20h",
+    "location": "Espaço Cielo, São Paulo",
+    "priceInCents": 2500,
+    "availableTickets": 8
+  },
+  {
+    "id": "tech-connect-2026",
+    "title": "Tech Connect Brasil",
+    "date": "21 de setembro • 9h",
+    "location": "Centro de Convenções, São Paulo",
+    "priceInCents": 1800,
+    "availableTickets": 2
+  },
+  {
+    "id": "gastronomia-urbana",
+    "title": "Festival de Gastronomia Urbana",
+    "date": "27 de setembro • 12h",
+    "location": "Parque Villa-Lobos, São Paulo",
+    "priceInCents": 3200,
+    "availableTickets": 5
+  }
+]
