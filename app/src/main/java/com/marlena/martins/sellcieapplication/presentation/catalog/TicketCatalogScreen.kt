@@ -27,16 +27,29 @@ import androidx.compose.ui.unit.dp
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.EventTicketCard
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.OrderSummaryCard
+import com.marlena.martins.sellcieapplication.presentation.checkout.CheckoutScreen
 
 
 @Composable
 fun TicketCatalogRoute(viewModel: TicketViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    TicketCatalogScreen(
-        uiState = uiState,
-        onQuantityChange = viewModel::changeQuantity,
-        onContinue = viewModel::onContinue
-    )
+    when (uiState.screen) {
+        TicketScreen.CATALOG -> TicketCatalogScreen(
+            uiState = uiState,
+            onQuantityChange = viewModel::changeQuantity,
+            onContinue = viewModel::onContinue
+        )
+
+        TicketScreen.CHECKOUT -> CheckoutScreen(
+            selectedTicketCount = uiState.selectedTicketCount,
+            totalInCents = uiState.totalInCents,
+            paymentState = uiState.paymentState,
+            selectedSimulation = uiState.paymentSimulation,
+            onSimulationSelected = viewModel::selectPaymentSimulation,
+            onConfirm = viewModel::confirmPayment,
+            onBack = viewModel::backToCatalog
+        )
+    }
 }
 
 @Composable

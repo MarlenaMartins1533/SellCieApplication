@@ -1,8 +1,11 @@
 package com.marlena.martins.sellcieapplication.presentation.catalog
 
 import com.marlena.martins.sellcieapplication.domain.model.Event
+import com.marlena.martins.sellcieapplication.data.payment.InMemoryPurchaseAttemptRepository
+import com.marlena.martins.sellcieapplication.data.payment.LocalPaymentGateway
 import com.marlena.martins.sellcieapplication.domain.repository.EventRepository
 import com.marlena.martins.sellcieapplication.domain.usecase.CalculateOrderTotal
+import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPayment
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -12,7 +15,8 @@ class TicketViewModelTest {
     fun `updates quantities independently and recalculates total`() {
         val viewModel = TicketViewModel(
             eventRepository = FakeEventRepository(events()),
-            calculateOrderTotal = CalculateOrderTotal()
+            calculateOrderTotal = CalculateOrderTotal(),
+            processPayment = paymentProcessor()
         )
 
         viewModel.changeQuantity("music", 2)
@@ -28,7 +32,8 @@ class TicketViewModelTest {
     fun `does not exceed the available ticket quantity`() {
         val viewModel = TicketViewModel(
             eventRepository = FakeEventRepository(events()),
-            calculateOrderTotal = CalculateOrderTotal()
+            calculateOrderTotal = CalculateOrderTotal(),
+            processPayment = paymentProcessor()
         )
 
         viewModel.changeQuantity("tech", 5)
@@ -40,6 +45,11 @@ class TicketViewModelTest {
     private fun events() = listOf(
         Event("music", "Music", "data", "local", 2500, 8),
         Event("tech", "Tech", "data", "local", 1800, 2)
+    )
+
+    private fun paymentProcessor() = ProcessPayment(
+        purchaseAttemptRepository = InMemoryPurchaseAttemptRepository(),
+        paymentGateway = LocalPaymentGateway()
     )
 
     private class FakeEventRepository(
