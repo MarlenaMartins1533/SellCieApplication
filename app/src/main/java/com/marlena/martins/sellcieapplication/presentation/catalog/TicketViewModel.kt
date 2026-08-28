@@ -3,6 +3,7 @@ package com.marlena.martins.sellcieapplication.presentation.catalog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.marlena.martins.sellcieapplication.domain.model.CartItem
+import com.marlena.martins.sellcieapplication.domain.model.Event
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import com.marlena.martins.sellcieapplication.domain.model.PurchasedTicket
@@ -59,6 +60,93 @@ class TicketViewModel(
         )
     }
 
+    fun openInventory() {
+        val state = mutableUiState.value
+        if (state.paymentState is PaymentUiState.Processing) return
+        mutableUiState.value = state.copy(
+            screen = TicketScreen.INVENTORY,
+            inventoryDraftEvents = state.events,
+            notice = null
+        )
+    }
+
+    fun adjustInventory(eventId: String, delta: Int) {
+        if (delta != 0) updateInventoryQuantity(eventId) { (it + delta).coerceAtLeast(0) }
+    }
+
+    fun setInventoryQuantity(eventId: String, quantity: Int) {
+        if (quantity >= 0) updateInventoryQuantity(eventId) { quantity }
+    }
+
+    fun createEvent(
+        title: String,
+        date: String,
+        location: String,
+        priceInCents: Long,
+        availableTickets: Int
+    ): Boolean = runCatching {
+        val state = mutableUiState.value
+        check(state.screen == TicketScreen.INVENTORY)
+        require(title.isNotBlank() && date.isNotBlank() && location.isNotBlank())
+        require(priceInCents >= 0 && availableTickets >= 0)
+        val event = Event(
+            id = UUID.randomUUID().toString(),
+            title = title.trim(),
+            date = date.trim(),
+            location = location.trim(),
+            priceInCents = priceInCents,
+            availableTickets = availableTickets
+        )
+        eventRepository.createEvent(event)
+        val persistedEvents = eventRepository.getEvents()
+        val persistedEvent = requireNotNull(persistedEvents.firstOrNull { it.id == event.id })
+        mutableUiState.value = state.copy(
+            events = persistedEvents,
+            inventoryDraftEvents = state.inventoryDraftEvents + persistedEvent,
+            notice = "Evento cadastrado."
+        )
+        true
+    }.getOrDefault(false)
+
+    fun saveInventory(): Boolean {
+        val state = mutableUiState.value
+        if (state.screen != TicketScreen.INVENTORY) return false
+        return runCatching {
+            state.inventoryDraftEvents.forEach { draftEvent ->
+                val storedEvent = state.events.firstOrNull { it.id == draftEvent.id }
+                if (storedEvent == null) {
+                    eventRepository.createEvent(draftEvent)
+                } else {
+                    eventRepository.adjustAvailableTickets(
+                        draftEvent.id,
+                        draftEvent.availableTickets - storedEvent.availableTickets
+                    )
+                }
+            }
+            eventRepository.getEvents()
+        }.fold(
+            onSuccess = { savedEvents ->
+                val quantities = state.quantitiesByEventId.mapNotNull { (eventId, quantity) ->
+                    savedEvents.firstOrNull { it.id == eventId }
+                        ?.let { event -> eventId to quantity.coerceAtMost(event.availableTickets) }
+                        ?.takeIf { (_, adjustedQuantity) -> adjustedQuantity > 0 }
+                }.toMap()
+                mutableUiState.value = state.copy(
+                    events = savedEvents,
+                    inventoryDraftEvents = savedEvents,
+                    quantitiesByEventId = quantities,
+                    totalInCents = calculateTotal(savedEvents, quantities),
+                    notice = "Alterações de estoque salvas."
+                )
+                true
+            },
+            onFailure = {
+                mutableUiState.value = state.copy(notice = "Não foi possível salvar as alterações de estoque.")
+                false
+            }
+        )
+    }
+
     fun confirmPurchase() {
         val state = mutableUiState.value
         if (
@@ -92,11 +180,18 @@ class TicketViewModel(
             val result = runCatching { processPayment(request) }
                 .getOrElse { ProcessPaymentResult.Completed(PaymentOutcome.TechnicalError) }
             if (result is ProcessPaymentResult.Completed) {
+                val events = if (result.outcome == PaymentOutcome.Approved) {
+                    eventRepository.recordApprovedPurchase(request.purchaseId, purchasedItems)
+                    eventRepository.getEvents()
+                } else {
+                    mutableUiState.value.events
+                }
                 val receipt = getPurchaseReceipt?.invoke(request.purchaseId)
                 mutableUiState.value = mutableUiState.value.copy(
                     screen = TicketScreen.RECEIPT,
                     paymentState = PaymentUiState.Result(result.outcome),
-                    receipt = receipt
+                    receipt = receipt,
+                    events = events
                 )
             }
         }
@@ -123,8 +218,17 @@ class TicketViewModel(
             )
     }
 
+    private fun updateInventoryQuantity(eventId: String, update: (Int) -> Int) {
+        val state = mutableUiState.value
+        if (state.screen != TicketScreen.INVENTORY) return
+        val draftEvents = state.inventoryDraftEvents.map { event ->
+            if (event.id == eventId) event.copy(availableTickets = update(event.availableTickets)) else event
+        }
+        mutableUiState.value = state.copy(inventoryDraftEvents = draftEvents)
+    }
+
     private fun calculateTotal(
-        events: List<com.marlena.martins.sellcieapplication.domain.model.Event>,
+        events: List<Event>,
         quantities: Map<String, Int>
     ): Long = calculateOrderTotal(
         events.mapNotNull { event ->

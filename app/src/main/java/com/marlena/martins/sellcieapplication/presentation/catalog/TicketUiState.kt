@@ -6,6 +6,7 @@ import com.marlena.martins.sellcieapplication.domain.usecase.PurchaseReceipt
 
 data class TicketUiState(
     val events: List<Event> = emptyList(),
+    val inventoryDraftEvents: List<Event> = emptyList(),
     val quantitiesByEventId: Map<String, Int> = emptyMap(),
     val totalInCents: Long = 0,
     val screen: TicketScreen = TicketScreen.CATALOG,
@@ -20,7 +21,7 @@ data class TicketUiState(
     fun quantityFor(eventId: String): Int = quantitiesByEventId[eventId] ?: 0
 
     fun returnToCatalog(): TicketUiState {
-        val approvedPurchase = screen in setOf(TicketScreen.RECEIPT, TicketScreen.MY_TICKETS) &&
+        val approvedPurchase = (screen == TicketScreen.RECEIPT || screen == TicketScreen.MY_TICKETS) &&
             (paymentState as? PaymentUiState.Result)?.outcome == PaymentOutcome.Approved
 
         return copy(
@@ -28,6 +29,7 @@ data class TicketUiState(
             paymentState = PaymentUiState.Idle,
             receipt = null,
             notice = null,
+            inventoryDraftEvents = emptyList(),
             quantitiesByEventId = if (approvedPurchase) emptyMap() else quantitiesByEventId,
             totalInCents = if (approvedPurchase) 0 else totalInCents
         )
@@ -38,7 +40,8 @@ enum class TicketScreen {
     CATALOG,
     CHECKOUT,
     RECEIPT,
-    MY_TICKETS
+    MY_TICKETS,
+    INVENTORY
 }
 
 sealed interface PaymentUiState {

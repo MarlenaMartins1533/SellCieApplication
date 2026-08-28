@@ -14,6 +14,7 @@ import com.marlena.martins.sellcieapplication.presentation.theme.CieloTicketThem
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.Assert.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class TicketCatalogScreenTest {
@@ -23,6 +24,7 @@ class TicketCatalogScreenTest {
 
     @Test
     fun quantitySelectorUpdatesSummaryAndRespectsAvailability() {
+        var inventoryOpenCount = 0
         var uiState by mutableStateOf(
             TicketUiState(
                 events = listOf(Event("music", "Music", "18 set", "São Paulo", 2500, 2))
@@ -40,7 +42,8 @@ class TicketCatalogScreenTest {
                             totalInCents = quantity * 2500L
                         )
                     },
-                    onContinue = {}
+                    onContinue = {},
+                    onOpenInventory = { inventoryOpenCount += 1 }
                 )
             }
         }
@@ -53,5 +56,7 @@ class TicketCatalogScreenTest {
         composeRule.onNodeWithTag(CatalogTestTags.ORDER_SUMMARY)
             .assertTextContains("50,00", substring = true)
         composeRule.onNodeWithTag(CatalogTestTags.increment("music")).assertIsNotEnabled()
+        composeRule.onNodeWithTag(CatalogTestTags.INVENTORY_BUTTON).performClick()
+        composeRule.runOnIdle { assertEquals(1, inventoryOpenCount) }
     }
 }

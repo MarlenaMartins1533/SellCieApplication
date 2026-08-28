@@ -73,6 +73,48 @@ class TicketViewModelTest {
     }
 
     @Test
+    fun `inventory edits are discarded on return and persisted only after save`() {
+        val repository = FakeEventRepository(events())
+        val viewModel = TicketViewModel(
+            eventRepository = repository,
+            calculateOrderTotal = CalculateOrderTotal(),
+            processPayment = paymentProcessor()
+        )
+
+        viewModel.openInventory()
+        viewModel.setInventoryQuantity("music", 5)
+        assertEquals(5, viewModel.uiState.value.inventoryDraftEvents.first { it.id == "music" }.availableTickets)
+        assertEquals(8, repository.getEvents().first { it.id == "music" }.availableTickets)
+
+        viewModel.backToCatalog()
+        assertEquals(8, viewModel.uiState.value.events.first { it.id == "music" }.availableTickets)
+
+        viewModel.openInventory()
+        viewModel.adjustInventory("music", -3)
+        assertEquals(true, viewModel.saveInventory())
+        assertEquals(5, repository.getEvents().first { it.id == "music" }.availableTickets)
+        assertEquals(5, viewModel.uiState.value.events.first { it.id == "music" }.availableTickets)
+    }
+
+    @Test
+    fun `creating an event persists it without saving stock adjustments`() {
+        val repository = FakeEventRepository(events())
+        val viewModel = TicketViewModel(
+            eventRepository = repository,
+            calculateOrderTotal = CalculateOrderTotal(),
+            processPayment = paymentProcessor()
+        )
+
+        viewModel.openInventory()
+        viewModel.adjustInventory("music", -2)
+        val created = viewModel.createEvent("Novo evento", "20 set", "São Paulo", 2000, 4)
+
+        assertEquals(true, created)
+        assertEquals(4, repository.getEvents().first { it.title == "Novo evento" }.availableTickets)
+        assertEquals(8, repository.getEvents().first { it.id == "music" }.availableTickets)
+    }
+
+    @Test
     fun `updates quantities independently and recalculates total`() {
         val viewModel = TicketViewModel(
             eventRepository = FakeEventRepository(events()),
@@ -118,8 +160,24 @@ class TicketViewModelTest {
     )
 
     private class FakeEventRepository(
-        private val events: List<Event>
+        events: List<Event>
     ) : EventRepository {
+        private var events = events
+
         override fun getEvents(): List<Event> = events
+
+        override fun createEvent(event: Event) {
+            events = events + event
+        }
+
+        override fun adjustAvailableTickets(eventId: String, delta: Int) {
+            events = events.map { event ->
+                if (event.id == eventId) {
+                    event.copy(availableTickets = (event.availableTickets + delta).coerceAtLeast(0))
+                } else {
+                    event
+                }
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.EventTicketCard
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
@@ -30,6 +32,7 @@ import com.marlena.martins.sellcieapplication.presentation.catalog.components.Or
 import com.marlena.martins.sellcieapplication.presentation.checkout.CheckoutScreen
 import com.marlena.martins.sellcieapplication.presentation.checkout.PurchasedTicketsScreen
 import com.marlena.martins.sellcieapplication.presentation.checkout.ReceiptScreen
+import com.marlena.martins.sellcieapplication.presentation.inventory.InventoryScreen
 
 
 @Composable
@@ -39,7 +42,8 @@ fun TicketCatalogRoute(viewModel: TicketViewModel) {
         TicketScreen.CATALOG -> TicketCatalogScreen(
             uiState = uiState,
             onQuantityChange = viewModel::changeQuantity,
-            onContinue = viewModel::onContinue
+            onContinue = viewModel::onContinue,
+            onOpenInventory = viewModel::openInventory
         )
 
         TicketScreen.CHECKOUT -> CheckoutScreen(
@@ -61,6 +65,15 @@ fun TicketCatalogRoute(viewModel: TicketViewModel) {
             receipt = uiState.receipt,
             onBack = viewModel::backToCatalog
         )
+
+        TicketScreen.INVENTORY -> InventoryScreen(
+            events = uiState.inventoryDraftEvents,
+            onAdjustInventory = viewModel::adjustInventory,
+            onSetInventoryQuantity = viewModel::setInventoryQuantity,
+            onCreateEvent = viewModel::createEvent,
+            onSaveInventory = viewModel::saveInventory,
+            onBack = viewModel::backToCatalog
+        )
     }
 }
 
@@ -69,6 +82,7 @@ fun TicketCatalogScreen(
     uiState: TicketUiState,
     onQuantityChange: (String, Int) -> Unit,
     onContinue: () -> Unit,
+    onOpenInventory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -84,7 +98,19 @@ fun TicketCatalogScreen(
         topBar = {
             CieloAppHeader(
                 title = "Cielo Ingressos",
-                subtitle = "Compra rápida e segura para os seus eventos"
+                subtitle = "Compra rápida e segura para os seus eventos",
+                trailingContent = {
+                    IconButton(
+                        onClick = onOpenInventory,
+                        modifier = Modifier.semantics { testTag = CatalogTestTags.INVENTORY_BUTTON }
+                    ) {
+                        Text(
+                            text = "▦",
+                            color = Color(0xFFD9D9D9),
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
