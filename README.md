@@ -2,6 +2,10 @@
 
 Aplicativo Android offline para catálogo de eventos, seleção de ingressos, pagamento determinístico local e comprovante persistido no dispositivo.
 
+## Identidade visual
+
+O aplicativo é exibido como **SellCie**. O launcher icon usa um ticket azul com marca de confirmação, criado para o projeto e distribuído em PNG nas densidades Android (`mdpi` a `xxxhdpi`). A geração foi feita localmente com uma ferramenta de IA, sem texto, marcas de terceiros ou dados de pessoas.
+
 ## Tecnologias
 
 - Kotlin, Android SDK, AppCompat/Fragment e Jetpack Compose Material 3
