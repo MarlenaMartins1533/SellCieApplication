@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.marlena.martins.sellcieapplication.domain.model.CartItem
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
-import com.marlena.martins.sellcieapplication.domain.model.PaymentSimulation
 import com.marlena.martins.sellcieapplication.domain.repository.EventRepository
 import com.marlena.martins.sellcieapplication.domain.usecase.CalculateOrderTotal
 import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPayment
 import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPaymentResult
+import com.marlena.martins.sellcieapplication.domain.usecase.GetPurchaseReceipt
 import java.util.UUID
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class TicketViewModel(
     private val eventRepository: EventRepository,
     private val calculateOrderTotal: CalculateOrderTotal,
-    private val processPayment: ProcessPayment
+    private val processPayment: ProcessPayment,
+    private val getPurchaseReceipt: GetPurchaseReceipt? = null
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TicketUiState())
@@ -47,38 +48,31 @@ class TicketViewModel(
     }
 
     fun onContinue() {
-        if (mutableUiState.value.selectedTicketCount == 0) return
-        mutableUiState.value = mutableUiState.value.copy(
-            screen = TicketScreen.CHECKOUT,
-            paymentState = PaymentUiState.Idle,
-            notice = null
-        )
-    }
-
-    fun selectPaymentSimulation(simulation: PaymentSimulation) {
-        if (mutableUiState.value.paymentState !is PaymentUiState.Idle) return
-        mutableUiState.value = mutableUiState.value.copy(paymentSimulation = simulation)
-    }
-
-    fun confirmPayment() {
         val state = mutableUiState.value
-        if (state.selectedTicketCount == 0 || state.paymentState !is PaymentUiState.Idle) return
+        if (state.selectedTicketCount == 0 || state.paymentState is PaymentUiState.Processing) return
 
         val request = PaymentRequest(
-            purchaseId = UUID.randomUUID().toString(),
+            // MerchantOrderId aceita somente caracteres alfanuméricos na API Cielo.
+            purchaseId = UUID.randomUUID().toString().replace("-", ""),
             totalInCents = state.totalInCents,
-            simulation = state.paymentSimulation
+            eventId = state.quantitiesByEventId.keys.first(),
+            quantity = state.selectedTicketCount
         )
         mutableUiState.value = state.copy(
-            paymentState = PaymentUiState.Processing(request.purchaseId)
+            screen = TicketScreen.CHECKOUT,
+            paymentState = PaymentUiState.Processing(request.purchaseId),
+            notice = null
         )
 
         viewModelScope.launch {
             val result = runCatching { processPayment(request) }
                 .getOrElse { ProcessPaymentResult.Completed(PaymentOutcome.TechnicalError) }
             if (result is ProcessPaymentResult.Completed) {
+                val receipt = getPurchaseReceipt?.invoke(request.purchaseId)
                 mutableUiState.value = mutableUiState.value.copy(
-                    paymentState = PaymentUiState.Result(result.outcome)
+                    screen = TicketScreen.RECEIPT,
+                    paymentState = PaymentUiState.Result(result.outcome),
+                    receipt = receipt
                 )
             }
         }
@@ -88,7 +82,9 @@ class TicketViewModel(
         if (mutableUiState.value.paymentState is PaymentUiState.Processing) return
         mutableUiState.value = mutableUiState.value.copy(
             screen = TicketScreen.CATALOG,
-            paymentState = PaymentUiState.Idle
+            paymentState = PaymentUiState.Idle,
+            receipt = null,
+            notice = null
         )
     }
 

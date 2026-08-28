@@ -5,10 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -21,7 +19,6 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
-import com.marlena.martins.sellcieapplication.domain.model.PaymentSimulation
 import com.marlena.martins.sellcieapplication.presentation.catalog.CatalogTestTags
 import com.marlena.martins.sellcieapplication.presentation.catalog.PaymentUiState
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
@@ -32,19 +29,14 @@ fun CheckoutScreen(
     selectedTicketCount: Int,
     totalInCents: Long,
     paymentState: PaymentUiState,
-    selectedSimulation: PaymentSimulation,
-    onSimulationSelected: (PaymentSimulation) -> Unit,
-    onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isProcessing = paymentState is PaymentUiState.Processing
-
     Scaffold(
         topBar = {
             CieloAppHeader(
                 title = "Cielo Ingressos",
-                subtitle = "Confirme seu pagamento"
+                subtitle = "Pagamento local seguro"
             )
         }
     ) { innerPadding ->
@@ -55,9 +47,9 @@ fun CheckoutScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Confirmar pagamento", style = MaterialTheme.typography.headlineMedium)
+            Text("Processando pagamento", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Revise o pedido antes de confirmar.",
+                "A confirmação é simulada localmente para este estudo offline.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -76,11 +68,7 @@ fun CheckoutScreen(
             }
 
             when (paymentState) {
-                PaymentUiState.Idle -> PaymentSimulationSelector(
-                    selectedSimulation = selectedSimulation,
-                    onSimulationSelected = onSimulationSelected
-                )
-
+                PaymentUiState.Idle,
                 is PaymentUiState.Processing -> ProcessingContent()
                 is PaymentUiState.Result -> PaymentResultContent(paymentState.outcome)
             }
@@ -94,48 +82,7 @@ fun CheckoutScreen(
                 ) {
                     Text("Voltar ao catálogo")
                 }
-            } else {
-                Button(
-                    onClick = onConfirm,
-                    enabled = !isProcessing,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { testTag = CatalogTestTags.CHECKOUT_CONFIRM_BUTTON }
-                ) {
-                    Text(if (isProcessing) "Processando..." else "Confirmar pagamento")
-                }
-                OutlinedButton(
-                    onClick = onBack,
-                    enabled = !isProcessing,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .semantics { testTag = CatalogTestTags.CHECKOUT_BACK_BUTTON }
-                ) {
-                    Text("Voltar")
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun PaymentSimulationSelector(
-    selectedSimulation: PaymentSimulation,
-    onSimulationSelected: (PaymentSimulation) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Resultado local para teste", style = MaterialTheme.typography.titleSmall)
-        Text(
-            "A simulação é usada apenas neste ambiente offline.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        PaymentSimulation.entries.forEach { simulation ->
-            FilterChip(
-                selected = selectedSimulation == simulation,
-                onClick = { onSimulationSelected(simulation) },
-                label = { Text(simulation.label()) }
-            )
         }
     }
 }
@@ -150,7 +97,7 @@ private fun ProcessingContent() {
         CircularProgressIndicator()
         Text("Processando pagamento…")
         Text(
-            "Aguarde antes de confirmar novamente.",
+            "Aguarde a confirmação local.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -160,7 +107,8 @@ private fun ProcessingContent() {
 @Composable
 private fun PaymentResultContent(outcome: PaymentOutcome) {
     val (title, message) = when (outcome) {
-        PaymentOutcome.Approved -> "Pagamento aprovado" to "O pagamento foi concluído localmente."
+        PaymentOutcome.Approved -> "Pagamento aprovado" to "A confirmação local foi registrada."
+        PaymentOutcome.Pending -> "Pagamento pendente" to "A confirmação local ainda está pendente."
         PaymentOutcome.Declined -> "Pagamento não aprovado" to "Verifique a forma de pagamento e tente novamente."
         PaymentOutcome.Canceled -> "Pagamento cancelado" to "Nenhuma nova cobrança será enviada para esta tentativa."
         PaymentOutcome.TechnicalError -> "Não foi possível concluir" to "Tente novamente ou volte ao catálogo."
@@ -174,11 +122,4 @@ private fun PaymentResultContent(outcome: PaymentOutcome) {
             Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-}
-
-private fun PaymentSimulation.label(): String = when (this) {
-    PaymentSimulation.APPROVED -> "Aprovado"
-    PaymentSimulation.DECLINED -> "Negado"
-    PaymentSimulation.CANCELED -> "Cancelado"
-    PaymentSimulation.TECHNICAL_ERROR -> "Erro técnico"
 }

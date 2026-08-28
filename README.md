@@ -1,34 +1,28 @@
 # Cielo Ingressos
 
-Aplicativo Android para consultar eventos, selecionar ingressos e acompanhar o total do pedido.
+Aplicativo Android offline para catálogo de eventos, seleção de ingressos, pagamento determinístico local e comprovante persistido no dispositivo.
 
 ## Tecnologias
 
-- Kotlin e Gradle Kotlin DSL
-- Android SDK, AppCompat e Fragment
-- Jetpack Compose e Material 3 para a interface
-- ViewModel e StateFlow para estado de tela
-- JUnit 4 para testes unitários
-- Compose UI Test para testes instrumentados
+- Kotlin, Android SDK, AppCompat/Fragment e Jetpack Compose Material 3
+- MVVM com ViewModel, StateFlow, Repository e casos de uso
+- SQLiteOpenHelper nativo para a tabela local `purchase_attempt`
+- JUnit 4 e Compose UI Test; testes instrumentados de persistência
 
-## Arquitetura e padrões
+## Fluxo e arquitetura
 
-- Camadas `data`, `domain` e `presentation` para separar leitura de dados, regras de negócio e interface.
-- Repository (`EventRepository`) para desacoplar a origem dos eventos da tela.
-- Use case (`CalculateOrderTotal`) para concentrar o cálculo do pedido.
-- MVVM: `TicketViewModel` expõe um `TicketUiState` imutável via `StateFlow`.
-- Componentização Compose: header, card de evento, seletor de quantidade e resumo do pedido são componentes independentes e reutilizáveis.
+O fluxo é catálogo → seleção → checkout → comprovante. O gateway padrão é `LocalPaymentGateway`, sem rede, credenciais ou transação externa. `ProcessPayment` cria/consulta uma tentativa pelo `purchaseId`; uma tentativa finalizada nunca chama o gateway novamente. Resultados aprovados, negados, cancelados e erros técnicos são persistidos localmente.
 
-## Estratégias adotadas
+O adaptador Cielo real permanece fora do build porque o SDK/emulador e sua documentação compatível não foram confirmados localmente. Ele pode ser conectado atrás de `PaymentGateway` sem alterar a UI ou as regras de idempotência.
 
-- Compose BOM para manter versões compatíveis das bibliotecas Compose.
-- Design system local baseado nas cores Cielo e em `MaterialTheme`.
-- Edge-to-edge com o header preenchendo a região da status bar e ícones claros.
-- Estado unidirecional: ações da interface chamam o ViewModel, que produz um novo estado para a tela.
-- Testes cobrem cálculo de totais, limites de quantidade e interação com o seletor de ingressos.
+## Execução local
+
+Abra o projeto no Android Studio com SDK 36 disponível e execute a variante `debug`. Não é necessário configurar credencial nem conexão de rede.
 
 ## Validação
 
 ```bash
-./gradlew assembleDebug testDebugUnitTest connectedDebugAndroidTest
+./gradlew --offline assembleDebug testDebugUnitTest connectedDebugAndroidTest
 ```
+
+O teste instrumentado de persistência usa o banco local e valida todos os status finais, recuperação por `purchaseId` e reentrada sem nova cobrança.

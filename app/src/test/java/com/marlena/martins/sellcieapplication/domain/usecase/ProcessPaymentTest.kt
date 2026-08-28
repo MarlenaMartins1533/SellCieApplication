@@ -2,7 +2,6 @@ package com.marlena.martins.sellcieapplication.domain.usecase
 
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
-import com.marlena.martins.sellcieapplication.domain.model.PaymentSimulation
 import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
 import com.marlena.martins.sellcieapplication.domain.repository.PurchaseAttemptRepository
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
@@ -17,7 +16,7 @@ class ProcessPaymentTest {
         val repository = FakePurchaseAttemptRepository()
         val gateway = CountingGateway(PaymentOutcome.Declined)
         val useCase = ProcessPayment(repository, gateway)
-        val request = PaymentRequest("purchase-1", 2500, PaymentSimulation.DECLINED)
+        val request = PaymentRequest("purchase-1", 2500)
 
         assertEquals(ProcessPaymentResult.Completed(PaymentOutcome.Declined), useCase(request))
         assertEquals(ProcessPaymentResult.Completed(PaymentOutcome.Declined), useCase(request))
@@ -54,33 +53,39 @@ class ProcessPaymentTest {
     ) : PurchaseAttemptRepository {
         private var finalOutcome: PaymentOutcome? = null
 
-        override fun startProcessing(request: PaymentRequest): StartProcessingResult {
+        override suspend fun startProcessing(request: PaymentRequest): StartProcessingResult {
             nextStartResult?.let { return it }
             finalOutcome?.let { return StartProcessingResult.AlreadyCompleted(it) }
             return StartProcessingResult.Started(
                 com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt(
                     purchaseId = request.purchaseId,
                     totalInCents = request.totalInCents,
-                    simulation = request.simulation,
                     status = com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.PROCESSING
                 )
             )
         }
 
-        override fun complete(purchaseId: String, outcome: PaymentOutcome) =
+        override suspend fun complete(purchaseId: String, outcome: PaymentOutcome) =
             com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt(
                 purchaseId = purchaseId,
                 totalInCents = 2500,
-                simulation = PaymentSimulation.APPROVED,
                 status = outcome.toStatus(),
                 outcome = outcome
             ).also { finalOutcome = outcome }
 
         private fun PaymentOutcome.toStatus() = when (this) {
             PaymentOutcome.Approved -> com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.APPROVED
+            PaymentOutcome.Pending -> com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.PENDING
             PaymentOutcome.Declined -> com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.DECLINED
             PaymentOutcome.Canceled -> com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.CANCELED
             PaymentOutcome.TechnicalError -> com.marlena.martins.sellcieapplication.domain.model.PurchaseAttemptStatus.TECHNICAL_ERROR
+        }
+
+        override suspend fun get(purchaseId: String) = finalOutcome?.let {
+            com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt(
+                purchaseId = purchaseId, totalInCents = 2500, outcome = it,
+                status = it.toStatus()
+            )
         }
     }
 }

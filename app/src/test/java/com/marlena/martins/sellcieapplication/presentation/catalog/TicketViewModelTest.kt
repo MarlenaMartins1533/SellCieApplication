@@ -2,8 +2,9 @@ package com.marlena.martins.sellcieapplication.presentation.catalog
 
 import com.marlena.martins.sellcieapplication.domain.model.Event
 import com.marlena.martins.sellcieapplication.data.payment.InMemoryPurchaseAttemptRepository
-import com.marlena.martins.sellcieapplication.data.payment.LocalPaymentGateway
+import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.repository.EventRepository
+import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
 import com.marlena.martins.sellcieapplication.domain.usecase.CalculateOrderTotal
 import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPayment
 import org.junit.Assert.assertEquals
@@ -49,7 +50,11 @@ class TicketViewModelTest {
 
     private fun paymentProcessor() = ProcessPayment(
         purchaseAttemptRepository = InMemoryPurchaseAttemptRepository(),
-        paymentGateway = LocalPaymentGateway()
+        paymentGateway = object : PaymentGateway {
+            override suspend fun process(
+                request: com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
+            ) = PaymentOutcome.Approved
+        }
     )
 
     private class FakeEventRepository(

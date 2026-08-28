@@ -9,22 +9,22 @@ import com.marlena.martins.sellcieapplication.domain.repository.PurchaseAttemptR
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
 
 /**
- * Armazena tentativas enquanto o app está aberto. A persistência em banco local
- * será adicionada na T3 sem alterar o contrato usado pelo caso de uso.
+ * Implementação simples para testes e para manter o domínio independente de Room.
  */
 class InMemoryPurchaseAttemptRepository : PurchaseAttemptRepository {
 
     private val attempts = mutableMapOf<String, PurchaseAttempt>()
 
-    @Synchronized
-    override fun startProcessing(request: PaymentRequest): StartProcessingResult {
+    override suspend fun startProcessing(request: PaymentRequest): StartProcessingResult {
         val existing = attempts[request.purchaseId]
         when {
             existing == null -> {
                 val started = PurchaseAttempt(
                     purchaseId = request.purchaseId,
+                    eventId = request.eventId,
+                    quantity = request.quantity,
                     totalInCents = request.totalInCents,
-                    simulation = request.simulation,
+                    createdAt = System.currentTimeMillis(),
                     status = PurchaseAttemptStatus.PROCESSING
                 )
                 attempts[request.purchaseId] = started
@@ -43,8 +43,7 @@ class InMemoryPurchaseAttemptRepository : PurchaseAttemptRepository {
         }
     }
 
-    @Synchronized
-    override fun complete(purchaseId: String, outcome: PaymentOutcome): PurchaseAttempt {
+    override suspend fun complete(purchaseId: String, outcome: PaymentOutcome): PurchaseAttempt {
         val attempt = requireNotNull(attempts[purchaseId]) { "Tentativa não encontrada." }
         check(attempt.status == PurchaseAttemptStatus.PROCESSING) {
             "A tentativa precisa estar em processamento para ser concluída."
@@ -52,4 +51,6 @@ class InMemoryPurchaseAttemptRepository : PurchaseAttemptRepository {
         return attempt.copy(status = outcome.toAttemptStatus(), outcome = outcome)
             .also { attempts[purchaseId] = it }
     }
+
+    override suspend fun get(purchaseId: String): PurchaseAttempt? = attempts[purchaseId]
 }

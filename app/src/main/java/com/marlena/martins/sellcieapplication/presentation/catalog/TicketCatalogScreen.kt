@@ -28,6 +28,7 @@ import com.marlena.martins.sellcieapplication.presentation.catalog.components.Ev
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.OrderSummaryCard
 import com.marlena.martins.sellcieapplication.presentation.checkout.CheckoutScreen
+import com.marlena.martins.sellcieapplication.presentation.checkout.ReceiptScreen
 
 
 @Composable
@@ -44,9 +45,12 @@ fun TicketCatalogRoute(viewModel: TicketViewModel) {
             selectedTicketCount = uiState.selectedTicketCount,
             totalInCents = uiState.totalInCents,
             paymentState = uiState.paymentState,
-            selectedSimulation = uiState.paymentSimulation,
-            onSimulationSelected = viewModel::selectPaymentSimulation,
-            onConfirm = viewModel::confirmPayment,
+            onBack = viewModel::backToCatalog
+        )
+
+        TicketScreen.RECEIPT -> ReceiptScreen(
+            receipt = uiState.receipt,
+            outcome = (uiState.paymentState as? PaymentUiState.Result)?.outcome,
             onBack = viewModel::backToCatalog
         )
     }

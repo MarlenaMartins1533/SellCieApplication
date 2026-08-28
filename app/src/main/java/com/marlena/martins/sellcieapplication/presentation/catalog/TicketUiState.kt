@@ -2,7 +2,7 @@ package com.marlena.martins.sellcieapplication.presentation.catalog
 
 import com.marlena.martins.sellcieapplication.domain.model.Event
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
-import com.marlena.martins.sellcieapplication.domain.model.PaymentSimulation
+import com.marlena.martins.sellcieapplication.domain.usecase.PurchaseReceipt
 
 data class TicketUiState(
     val events: List<Event> = emptyList(),
@@ -10,7 +10,7 @@ data class TicketUiState(
     val totalInCents: Long = 0,
     val screen: TicketScreen = TicketScreen.CATALOG,
     val paymentState: PaymentUiState = PaymentUiState.Idle,
-    val paymentSimulation: PaymentSimulation = PaymentSimulation.APPROVED,
+    val receipt: PurchaseReceipt? = null,
     val notice: String? = null,
     val errorMessage: String? = null
 ) {
@@ -22,7 +22,8 @@ data class TicketUiState(
 
 enum class TicketScreen {
     CATALOG,
-    CHECKOUT
+    CHECKOUT,
+    RECEIPT
 }
 
 sealed interface PaymentUiState {
