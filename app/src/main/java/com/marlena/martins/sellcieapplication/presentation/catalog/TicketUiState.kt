@@ -18,12 +18,27 @@ data class TicketUiState(
         get() = quantitiesByEventId.values.sum()
 
     fun quantityFor(eventId: String): Int = quantitiesByEventId[eventId] ?: 0
+
+    fun returnToCatalog(): TicketUiState {
+        val approvedPurchase = screen in setOf(TicketScreen.RECEIPT, TicketScreen.MY_TICKETS) &&
+            (paymentState as? PaymentUiState.Result)?.outcome == PaymentOutcome.Approved
+
+        return copy(
+            screen = TicketScreen.CATALOG,
+            paymentState = PaymentUiState.Idle,
+            receipt = null,
+            notice = null,
+            quantitiesByEventId = if (approvedPurchase) emptyMap() else quantitiesByEventId,
+            totalInCents = if (approvedPurchase) 0 else totalInCents
+        )
+    }
 }
 
 enum class TicketScreen {
     CATALOG,
     CHECKOUT,
-    RECEIPT
+    RECEIPT,
+    MY_TICKETS
 }
 
 sealed interface PaymentUiState {

@@ -23,6 +23,7 @@ class InMemoryPurchaseAttemptRepository : PurchaseAttemptRepository {
                     purchaseId = request.purchaseId,
                     eventId = request.eventId,
                     quantity = request.quantity,
+                    items = request.items,
                     totalInCents = request.totalInCents,
                     createdAt = System.currentTimeMillis(),
                     status = PurchaseAttemptStatus.PROCESSING

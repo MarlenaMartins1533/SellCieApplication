@@ -4,12 +4,29 @@ data class PaymentRequest(
     val purchaseId: String,
     val totalInCents: Long,
     val eventId: String = "",
-    val quantity: Int = 0
+    val quantity: Int = 0,
+    val items: List<PurchasedTicket> = emptyList()
 ) {
     init {
         require(purchaseId.isNotBlank()) { "A tentativa precisa de um identificador." }
         require(totalInCents > 0) { "O total deve ser maior que zero." }
     }
+}
+
+data class PurchasedTicket(
+    val eventId: String,
+    val title: String,
+    val quantity: Int,
+    val unitPriceInCents: Long
+) {
+    init {
+        require(eventId.isNotBlank()) { "O item precisa de um evento." }
+        require(title.isNotBlank()) { "O item precisa de um nome." }
+        require(quantity > 0) { "A quantidade do item deve ser maior que zero." }
+        require(unitPriceInCents >= 0) { "O preço do item não pode ser negativo." }
+    }
+
+    val subtotalInCents: Long get() = quantity * unitPriceInCents
 }
 
 sealed interface PaymentOutcome {
@@ -35,6 +52,7 @@ data class PurchaseAttempt(
     val totalInCents: Long,
     val eventId: String = "",
     val quantity: Int = 0,
+    val items: List<PurchasedTicket> = emptyList(),
     val createdAt: Long = 0L,
     val status: PurchaseAttemptStatus = PurchaseAttemptStatus.CREATED,
     val outcome: PaymentOutcome? = null

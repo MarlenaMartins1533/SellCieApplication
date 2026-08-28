@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -18,7 +19,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.presentation.catalog.CatalogTestTags
 import com.marlena.martins.sellcieapplication.presentation.catalog.PaymentUiState
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
@@ -29,6 +29,7 @@ fun CheckoutScreen(
     selectedTicketCount: Int,
     totalInCents: Long,
     paymentState: PaymentUiState,
+    onConfirm: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -47,9 +48,9 @@ fun CheckoutScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Processando pagamento", style = MaterialTheme.typography.headlineMedium)
+            Text("Confirme sua compra", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "A confirmação é simulada localmente para este estudo offline.",
+                "Revise o pedido antes de confirmar o pagamento.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -68,9 +69,27 @@ fun CheckoutScreen(
             }
 
             when (paymentState) {
-                PaymentUiState.Idle,
+                PaymentUiState.Idle -> {
+                    Text(
+                        "O pagamento será processado localmente após sua confirmação.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { testTag = CatalogTestTags.CHECKOUT_CONFIRM_BUTTON }
+                    ) { Text("Confirmar compra") }
+                    OutlinedButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { testTag = CatalogTestTags.CHECKOUT_BACK_BUTTON }
+                    ) { Text("Voltar ao catálogo") }
+                }
+
                 is PaymentUiState.Processing -> ProcessingContent()
-                is PaymentUiState.Result -> PaymentResultContent(paymentState.outcome)
+                is PaymentUiState.Result -> Unit
             }
 
             if (paymentState is PaymentUiState.Result) {
@@ -101,25 +120,5 @@ private fun ProcessingContent() {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    }
-}
-
-@Composable
-private fun PaymentResultContent(outcome: PaymentOutcome) {
-    val (title, message) = when (outcome) {
-        PaymentOutcome.Approved -> "Pagamento aprovado" to "A confirmação local foi registrada."
-        PaymentOutcome.Pending -> "Pagamento pendente" to "A confirmação local ainda está pendente."
-        PaymentOutcome.Declined -> "Pagamento não aprovado" to "Verifique a forma de pagamento e tente novamente."
-        PaymentOutcome.Canceled -> "Pagamento cancelado" to "Nenhuma nova cobrança será enviada para esta tentativa."
-        PaymentOutcome.TechnicalError -> "Não foi possível concluir" to "Tente novamente ou volte ao catálogo."
-    }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
@@ -26,6 +27,7 @@ import com.marlena.martins.sellcieapplication.presentation.catalog.formatCurrenc
 fun ReceiptScreen(
     receipt: PurchaseReceipt?,
     outcome: PaymentOutcome?,
+    onViewTickets: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -43,15 +45,31 @@ fun ReceiptScreen(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Evento: ${receipt.event.title}")
-                        Text("Quantidade: ${receipt.quantity}")
+                        Text("Itens do pedido", fontWeight = FontWeight.SemiBold)
+                        receipt.items.forEach { item ->
+                            Text(item.title, fontWeight = FontWeight.Medium)
+                            Text(
+                                "${item.quantity} ingresso(s) × ${formatCurrency(item.unitPriceInCents)} = " +
+                                    formatCurrency(item.subtotalInCents),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text("Quantidade total: ${receipt.totalQuantity}")
                         Text("Total: ${formatCurrency(receipt.totalInCents)}")
                         Text("Data: ${receipt.formattedDate}")
                         Text("Referência: ${receipt.shortReference}")
                     }
                 }
             }
-            Button(
+            if (outcome == PaymentOutcome.Approved && receipt != null) {
+                Button(
+                    onClick = onViewTickets,
+                    modifier = Modifier.fillMaxWidth().semantics {
+                        testTag = CatalogTestTags.RECEIPT_VIEW_TICKETS_BUTTON
+                    }
+                ) { Text("Ver meus ingressos") }
+            }
+            OutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth().semantics { testTag = CatalogTestTags.RECEIPT_BACK_BUTTON }
             ) { Text("Voltar ao catálogo") }

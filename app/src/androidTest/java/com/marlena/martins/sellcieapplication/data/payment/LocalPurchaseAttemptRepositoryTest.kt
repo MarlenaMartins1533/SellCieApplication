@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
+import com.marlena.martins.sellcieapplication.domain.model.PurchasedTicket
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -29,5 +30,23 @@ class LocalPurchaseAttemptRepositoryTest {
             assertEquals(outcome, repository.get(request.purchaseId)?.outcome)
             assertEquals(StartProcessingResult.AlreadyCompleted(outcome), repository.startProcessing(request))
         }
+    }
+
+    @Test
+    fun persistsEveryItemInThePurchaseReceipt() = runBlocking {
+        val repository = LocalPurchaseAttemptRepository(context)
+        val request = PaymentRequest(
+            purchaseId = "purchase-items",
+            totalInCents = 6800,
+            items = listOf(
+                PurchasedTicket("music", "Music", 2, 2500),
+                PurchasedTicket("tech", "Tech", 1, 1800)
+            )
+        )
+
+        repository.startProcessing(request)
+        repository.complete(request.purchaseId, PaymentOutcome.Approved)
+
+        assertEquals(request.items, repository.get(request.purchaseId)?.items)
     }
 }

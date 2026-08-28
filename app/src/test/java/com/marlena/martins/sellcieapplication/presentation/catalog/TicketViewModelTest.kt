@@ -13,6 +13,66 @@ import org.junit.Test
 class TicketViewModelTest {
 
     @Test
+    fun `opening the confirmation does not process the payment`() {
+        var gatewayCalls = 0
+        val viewModel = TicketViewModel(
+            eventRepository = FakeEventRepository(events()),
+            calculateOrderTotal = CalculateOrderTotal(),
+            processPayment = ProcessPayment(
+                purchaseAttemptRepository = InMemoryPurchaseAttemptRepository(),
+                paymentGateway = object : PaymentGateway {
+                    override suspend fun process(
+                        request: com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
+                    ): PaymentOutcome {
+                        gatewayCalls += 1
+                        return PaymentOutcome.Approved
+                    }
+                }
+            )
+        )
+        viewModel.changeQuantity("music", 1)
+
+        viewModel.onContinue()
+
+        assertEquals(TicketScreen.CHECKOUT, viewModel.uiState.value.screen)
+        assertEquals(PaymentUiState.Idle, viewModel.uiState.value.paymentState)
+        assertEquals(0, gatewayCalls)
+    }
+
+    @Test
+    fun `clears the selected tickets only after returning from an approved receipt`() {
+        val selectedItems = mapOf("music" to 2, "tech" to 1)
+
+        val approvedReturn = TicketUiState(
+            quantitiesByEventId = selectedItems,
+            totalInCents = 6800,
+            screen = TicketScreen.RECEIPT,
+            paymentState = PaymentUiState.Result(PaymentOutcome.Approved)
+        ).returnToCatalog()
+        val declinedReturn = TicketUiState(
+            quantitiesByEventId = selectedItems,
+            totalInCents = 6800,
+            screen = TicketScreen.RECEIPT,
+            paymentState = PaymentUiState.Result(PaymentOutcome.Declined)
+        ).returnToCatalog()
+
+        assertEquals(TicketScreen.CATALOG, approvedReturn.screen)
+        assertEquals(0, approvedReturn.selectedTicketCount)
+        assertEquals(0L, approvedReturn.totalInCents)
+        assertEquals(selectedItems, declinedReturn.quantitiesByEventId)
+        assertEquals(6800L, declinedReturn.totalInCents)
+
+        val ticketsReturn = TicketUiState(
+            quantitiesByEventId = selectedItems,
+            totalInCents = 6800,
+            screen = TicketScreen.MY_TICKETS,
+            paymentState = PaymentUiState.Result(PaymentOutcome.Approved)
+        ).returnToCatalog()
+        assertEquals(0, ticketsReturn.selectedTicketCount)
+        assertEquals(0L, ticketsReturn.totalInCents)
+    }
+
+    @Test
     fun `updates quantities independently and recalculates total`() {
         val viewModel = TicketViewModel(
             eventRepository = FakeEventRepository(events()),

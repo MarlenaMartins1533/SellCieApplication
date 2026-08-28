@@ -28,6 +28,7 @@ import com.marlena.martins.sellcieapplication.presentation.catalog.components.Ev
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.OrderSummaryCard
 import com.marlena.martins.sellcieapplication.presentation.checkout.CheckoutScreen
+import com.marlena.martins.sellcieapplication.presentation.checkout.PurchasedTicketsScreen
 import com.marlena.martins.sellcieapplication.presentation.checkout.ReceiptScreen
 
 
@@ -45,12 +46,19 @@ fun TicketCatalogRoute(viewModel: TicketViewModel) {
             selectedTicketCount = uiState.selectedTicketCount,
             totalInCents = uiState.totalInCents,
             paymentState = uiState.paymentState,
+            onConfirm = viewModel::confirmPurchase,
             onBack = viewModel::backToCatalog
         )
 
         TicketScreen.RECEIPT -> ReceiptScreen(
             receipt = uiState.receipt,
             outcome = (uiState.paymentState as? PaymentUiState.Result)?.outcome,
+            onViewTickets = viewModel::showMyTickets,
+            onBack = viewModel::backToCatalog
+        )
+
+        TicketScreen.MY_TICKETS -> PurchasedTicketsScreen(
+            receipt = uiState.receipt,
             onBack = viewModel::backToCatalog
         )
     }

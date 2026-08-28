@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.marlena.martins.sellcieapplication.domain.model.CartItem
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
+import com.marlena.martins.sellcieapplication.domain.model.PurchasedTicket
 import com.marlena.martins.sellcieapplication.domain.repository.EventRepository
 import com.marlena.martins.sellcieapplication.domain.usecase.CalculateOrderTotal
 import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPayment
@@ -51,15 +52,38 @@ class TicketViewModel(
         val state = mutableUiState.value
         if (state.selectedTicketCount == 0 || state.paymentState is PaymentUiState.Processing) return
 
+        mutableUiState.value = state.copy(
+            screen = TicketScreen.CHECKOUT,
+            paymentState = PaymentUiState.Idle,
+            notice = null
+        )
+    }
+
+    fun confirmPurchase() {
+        val state = mutableUiState.value
+        if (
+            state.screen != TicketScreen.CHECKOUT ||
+            state.selectedTicketCount == 0 ||
+            state.paymentState is PaymentUiState.Processing
+        ) return
+
+        val purchasedItems = state.events.mapNotNull { event ->
+            state.quantityFor(event.id).takeIf { it > 0 }?.let { quantity ->
+                PurchasedTicket(
+                    eventId = event.id,
+                    title = event.title,
+                    quantity = quantity,
+                    unitPriceInCents = event.priceInCents
+                )
+            }
+        }
         val request = PaymentRequest(
             // MerchantOrderId aceita somente caracteres alfanuméricos na API Cielo.
             purchaseId = UUID.randomUUID().toString().replace("-", ""),
             totalInCents = state.totalInCents,
-            eventId = state.quantitiesByEventId.keys.first(),
-            quantity = state.selectedTicketCount
+            items = purchasedItems
         )
         mutableUiState.value = state.copy(
-            screen = TicketScreen.CHECKOUT,
             paymentState = PaymentUiState.Processing(request.purchaseId),
             notice = null
         )
@@ -78,14 +102,17 @@ class TicketViewModel(
         }
     }
 
+    fun showMyTickets() {
+        val state = mutableUiState.value
+        val outcome = (state.paymentState as? PaymentUiState.Result)?.outcome
+        if (state.screen != TicketScreen.RECEIPT || outcome != PaymentOutcome.Approved || state.receipt == null) return
+
+        mutableUiState.value = state.copy(screen = TicketScreen.MY_TICKETS)
+    }
+
     fun backToCatalog() {
         if (mutableUiState.value.paymentState is PaymentUiState.Processing) return
-        mutableUiState.value = mutableUiState.value.copy(
-            screen = TicketScreen.CATALOG,
-            paymentState = PaymentUiState.Idle,
-            receipt = null,
-            notice = null
-        )
+        mutableUiState.value = mutableUiState.value.returnToCatalog()
     }
 
     private fun loadEvents() {
