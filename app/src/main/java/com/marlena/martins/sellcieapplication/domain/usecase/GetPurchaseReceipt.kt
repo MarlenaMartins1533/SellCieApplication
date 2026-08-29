@@ -13,7 +13,8 @@ data class PurchaseReceipt(
     val items: List<PurchasedTicket>,
     val totalInCents: Long,
     val outcome: PaymentOutcome,
-    val createdAt: Long
+    val createdAt: Long,
+    val cieloMetadata: Map<String, String>? = null
 ) {
     val shortReference: String get() = purchaseId.takeLast(8).uppercase()
     val formattedDate: String get() = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("pt-BR")).format(Date(createdAt))
@@ -35,7 +36,8 @@ class GetPurchaseReceipt(
             items = items,
             totalInCents = attempt.totalInCents,
             outcome = outcome,
-            createdAt = attempt.createdAt
+            createdAt = attempt.createdAt,
+            cieloMetadata = attempt.cieloMetadata
         )
     }
 

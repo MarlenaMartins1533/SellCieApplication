@@ -3,8 +3,6 @@ package com.marlena.martins.sellcieapplication.presentation.catalog
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.marlena.martins.sellcieapplication.BuildConfig
-import com.marlena.martins.sellcieapplication.data.payment.LocalPaymentGateway
 import com.marlena.martins.sellcieapplication.data.payment.LocalPurchaseAttemptRepository
 import com.marlena.martins.sellcieapplication.data.payment.CieloPaymentGatewayRegistry
 import com.marlena.martins.sellcieapplication.data.events.LocalEventRepository
@@ -21,11 +19,8 @@ class TicketViewModelFactory(
         require(modelClass.isAssignableFrom(TicketViewModel::class.java))
         val purchaseRepository = LocalPurchaseAttemptRepository(applicationContext)
         val eventRepository = LocalEventRepository(applicationContext)
-        val gateway = if (BuildConfig.CIELO_EMULATOR_ENABLED) {
-            CieloPaymentGatewayRegistry.get(applicationContext)
-        } else {
-            LocalPaymentGateway()
-        }
+        val gateway = CieloPaymentGatewayRegistry.get(applicationContext)
+        
         return TicketViewModel(
             eventRepository = eventRepository,
             calculateOrderTotal = CalculateOrderTotal(),

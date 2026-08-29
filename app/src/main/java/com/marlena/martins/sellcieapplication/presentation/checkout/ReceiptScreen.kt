@@ -58,6 +58,16 @@ fun ReceiptScreen(
                         Text("Total: ${formatCurrency(receipt.totalInCents)}")
                         Text("Data: ${receipt.formattedDate}")
                         Text("Referência: ${receipt.shortReference}")
+
+                        receipt.cieloMetadata?.let { meta ->
+                            Text("Dados Cielo", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+                            meta["brand"]?.let { Text("Bandeira: $it") }
+                            meta["authCode"]?.let { Text("Autorização: $it") }
+                            meta["cieloCode"]?.let { Text("NSU: $it") }
+                            meta["mask"]?.let { Text("Cartão: $it") }
+                            meta["terminal"]?.let { Text("Terminal: $it") }
+                            meta["reason"]?.let { Text("Motivo: $it", color = MaterialTheme.colorScheme.error) }
+                        }
                     }
                 }
             }

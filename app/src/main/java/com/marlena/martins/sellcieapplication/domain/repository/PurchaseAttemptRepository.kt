@@ -7,7 +7,11 @@ import com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt
 interface PurchaseAttemptRepository {
     suspend fun startProcessing(request: PaymentRequest): StartProcessingResult
 
-    suspend fun complete(purchaseId: String, outcome: PaymentOutcome): PurchaseAttempt
+    suspend fun complete(
+        purchaseId: String,
+        outcome: PaymentOutcome,
+        metadata: Map<String, String> = emptyMap()
+    ): PurchaseAttempt
 
     suspend fun get(purchaseId: String): PurchaseAttempt?
 }

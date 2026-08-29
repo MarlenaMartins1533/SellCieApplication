@@ -55,7 +55,8 @@ data class PurchaseAttempt(
     val items: List<PurchasedTicket> = emptyList(),
     val createdAt: Long = 0L,
     val status: PurchaseAttemptStatus = PurchaseAttemptStatus.CREATED,
-    val outcome: PaymentOutcome? = null
+    val outcome: PaymentOutcome? = null,
+    val cieloMetadata: Map<String, String>? = null
 )
 
 fun PaymentOutcome.toAttemptStatus(): PurchaseAttemptStatus = when (this) {

@@ -3,6 +3,7 @@ package com.marlena.martins.sellcieapplication.domain.usecase
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
+import com.marlena.martins.sellcieapplication.domain.repository.PaymentGatewayResult
 import com.marlena.martins.sellcieapplication.domain.repository.PurchaseAttemptRepository
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
 
@@ -14,10 +15,10 @@ class ProcessPayment(
         val startResult = purchaseAttemptRepository.startProcessing(request)
     ) {
         is StartProcessingResult.Started -> {
-            val outcome = runCatching { paymentGateway.process(request) }
-                .getOrElse { PaymentOutcome.TechnicalError }
-            purchaseAttemptRepository.complete(request.purchaseId, outcome)
-            ProcessPaymentResult.Completed(outcome)
+            val result = runCatching { paymentGateway.process(request) }
+                .getOrElse { PaymentGatewayResult(PaymentOutcome.TechnicalError) }
+            purchaseAttemptRepository.complete(request.purchaseId, result.outcome, result.metadata)
+            ProcessPaymentResult.Completed(result.outcome)
         }
 
         StartProcessingResult.AlreadyProcessing -> ProcessPaymentResult.AlreadyProcessing

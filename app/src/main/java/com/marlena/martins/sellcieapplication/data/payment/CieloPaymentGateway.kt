@@ -7,21 +7,24 @@ import com.marlena.martins.sellcieapplication.BuildConfig
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
+import com.marlena.martins.sellcieapplication.domain.repository.PaymentGatewayResult
 import kotlinx.coroutines.CompletableDeferred
 
 class CieloPaymentGateway(private val context: Context) : PaymentGateway {
-    private val pending = mutableMapOf<String, CompletableDeferred<PaymentOutcome>>()
+    private val pending = mutableMapOf<String, CompletableDeferred<PaymentGatewayResult>>()
     private val errorHandler = CieloPaymentErrorHandler()
 
-    override suspend fun process(request: PaymentRequest): PaymentOutcome {
-        if (BuildConfig.CIELO_CLIENT_ID.isBlank() || BuildConfig.CIELO_ACCESS_TOKEN.isBlank()) {
-            return PaymentOutcome.TechnicalError
-        }
-        val result = CompletableDeferred<PaymentOutcome>()
+    override suspend fun process(request: PaymentRequest): PaymentGatewayResult {
+        // Removemos a dependência estrita do flag de emulador para as credenciais dummy,
+        // garantindo que o Deep Link sempre seja disparado para o "app sample" (emulador).
+        val clientId = BuildConfig.CIELO_CLIENT_ID.ifBlank { "EMULATOR_CLIENT_ID" }
+        val accessToken = BuildConfig.CIELO_ACCESS_TOKEN.ifBlank { "EMULATOR_ACCESS_TOKEN" }
+
+        val result = CompletableDeferred<PaymentGatewayResult>()
         synchronized(pending) { pending[request.purchaseId] = result }
         try {
             val intent = Intent(Intent.ACTION_VIEW, CieloPaymentContract.paymentUri(
-                request, BuildConfig.CIELO_CLIENT_ID, BuildConfig.CIELO_ACCESS_TOKEN
+                request, clientId, accessToken
             )).apply {
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -30,9 +33,9 @@ class CieloPaymentGateway(private val context: Context) : PaymentGateway {
             context.startActivity(intent)
             return result.await()
         } catch (_: ActivityNotFoundException) {
-            return PaymentOutcome.TechnicalError
+            return PaymentGatewayResult(PaymentOutcome.TechnicalError)
         } catch (_: SecurityException) {
-            return PaymentOutcome.TechnicalError
+            return PaymentGatewayResult(PaymentOutcome.TechnicalError)
         } finally {
             synchronized(pending) { pending.remove(request.purchaseId) }
             PaymentForegroundService.stop(context)
@@ -41,15 +44,16 @@ class CieloPaymentGateway(private val context: Context) : PaymentGateway {
 
     fun completeFromCallback(uri: android.net.Uri?): Boolean {
         val callback = runCatching { CieloPaymentContract.parseCallback(uri) }.getOrElse {
-            completeAny(PaymentOutcome.TechnicalError)
+            completeAny(PaymentGatewayResult(PaymentOutcome.TechnicalError))
             return false
         }
-        return completeAny(errorHandler.outcome(callback.responseCode, callback.cieloCode))
+        val outcome = errorHandler.outcome(callback.responseCode, callback.cieloCode)
+        return completeAny(PaymentGatewayResult(outcome, callback.metadata))
     }
 
-    private fun completeAny(outcome: PaymentOutcome): Boolean {
+    private fun completeAny(result: PaymentGatewayResult): Boolean {
         val deferred = synchronized(pending) { pending.values.firstOrNull() } ?: return false
-        return deferred.complete(outcome)
+        return deferred.complete(result)
     }
 }
 

@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.content.Context
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt
@@ -12,16 +14,18 @@ import com.marlena.martins.sellcieapplication.domain.model.toAttemptStatus
 import com.marlena.martins.sellcieapplication.domain.repository.PurchaseAttemptRepository
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
 
-private class PurchaseDb(context: Context) : SQLiteOpenHelper(context, "purchases.db", null, 2) {
+private class PurchaseDb(context: Context) : SQLiteOpenHelper(context, "purchases.db", null, 3) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("""CREATE TABLE purchase_attempt (
             purchaseId TEXT PRIMARY KEY NOT NULL, eventId TEXT NOT NULL, quantity INTEGER NOT NULL,
-            totalInCents INTEGER NOT NULL, status TEXT NOT NULL, createdAt INTEGER NOT NULL)""")
+            totalInCents INTEGER NOT NULL, status TEXT NOT NULL, createdAt INTEGER NOT NULL,
+            metadata TEXT)""")
         createItemsTable(db)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) createItemsTable(db)
+        if (oldVersion < 3) db.execSQL("ALTER TABLE purchase_attempt ADD COLUMN metadata TEXT")
     }
 
     private fun createItemsTable(db: SQLiteDatabase) {
@@ -34,6 +38,7 @@ private class PurchaseDb(context: Context) : SQLiteOpenHelper(context, "purchase
 
 class LocalPurchaseAttemptRepository(context: Context) : PurchaseAttemptRepository {
     private val helper = PurchaseDb(context.applicationContext)
+    private val gson = Gson()
 
     override suspend fun startProcessing(request: PaymentRequest): StartProcessingResult =
         synchronized(helper) {
@@ -55,11 +60,19 @@ class LocalPurchaseAttemptRepository(context: Context) : PurchaseAttemptReposito
             StartProcessingResult.Started(attempt)
         }
 
-    override suspend fun complete(purchaseId: String, outcome: PaymentOutcome): PurchaseAttempt =
+    override suspend fun complete(
+        purchaseId: String,
+        outcome: PaymentOutcome,
+        metadata: Map<String, String>
+    ): PurchaseAttempt =
         synchronized(helper) {
             val current = requireNotNull(find(purchaseId)) { "Tentativa não encontrada." }
             check(current.status == PurchaseAttemptStatus.PROCESSING)
-            current.copy(status = outcome.toAttemptStatus(), outcome = outcome).also(::save)
+            current.copy(
+                status = outcome.toAttemptStatus(),
+                outcome = outcome,
+                cieloMetadata = metadata
+            ).also(::save)
         }
 
     override suspend fun get(purchaseId: String): PurchaseAttempt? = synchronized(helper) { find(purchaseId) }
@@ -69,6 +82,10 @@ class LocalPurchaseAttemptRepository(context: Context) : PurchaseAttemptReposito
     ).use { cursor ->
         if (!cursor.moveToFirst()) return@use null
         val status = PurchaseAttemptStatus.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("status")))
+        val metadataJson = cursor.getString(cursor.getColumnIndexOrThrow("metadata"))
+        val metadata: Map<String, String>? = metadataJson?.let {
+            gson.fromJson(it, object : TypeToken<Map<String, String>>() {}.type)
+        }
         PurchaseAttempt(
             purchaseId = cursor.getString(cursor.getColumnIndexOrThrow("purchaseId")),
             totalInCents = cursor.getLong(cursor.getColumnIndexOrThrow("totalInCents")),
@@ -77,7 +94,8 @@ class LocalPurchaseAttemptRepository(context: Context) : PurchaseAttemptReposito
             items = findItems(purchaseId),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow("createdAt")),
             status = status,
-            outcome = status.toOutcome()
+            outcome = status.toOutcome(),
+            cieloMetadata = metadata
         )
     }
 
@@ -86,6 +104,7 @@ class LocalPurchaseAttemptRepository(context: Context) : PurchaseAttemptReposito
             put("purchaseId", attempt.purchaseId); put("eventId", attempt.eventId)
             put("quantity", attempt.quantity); put("totalInCents", attempt.totalInCents)
             put("status", attempt.status.name); put("createdAt", attempt.createdAt)
+            put("metadata", attempt.cieloMetadata?.let { gson.toJson(it) })
         }
         helper.writableDatabase.useTransaction { database ->
             database.insertWithOnConflict("purchase_attempt", null, values, SQLiteDatabase.CONFLICT_REPLACE)

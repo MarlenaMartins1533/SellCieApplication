@@ -44,13 +44,20 @@ class InMemoryPurchaseAttemptRepository : PurchaseAttemptRepository {
         }
     }
 
-    override suspend fun complete(purchaseId: String, outcome: PaymentOutcome): PurchaseAttempt {
+    override suspend fun complete(
+        purchaseId: String,
+        outcome: PaymentOutcome,
+        metadata: Map<String, String>
+    ): PurchaseAttempt {
         val attempt = requireNotNull(attempts[purchaseId]) { "Tentativa não encontrada." }
         check(attempt.status == PurchaseAttemptStatus.PROCESSING) {
             "A tentativa precisa estar em processamento para ser concluída."
         }
-        return attempt.copy(status = outcome.toAttemptStatus(), outcome = outcome)
-            .also { attempts[purchaseId] = it }
+        return attempt.copy(
+            status = outcome.toAttemptStatus(),
+            outcome = outcome,
+            cieloMetadata = metadata
+        ).also { attempts[purchaseId] = it }
     }
 
     override suspend fun get(purchaseId: String): PurchaseAttempt? = attempts[purchaseId]
