@@ -21,11 +21,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.marlena.martins.sellcieapplication.R
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.EventTicketCard
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.OrderSummaryCard
@@ -86,10 +88,12 @@ fun TicketCatalogScreen(
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     LaunchedEffect(uiState.notice, uiState.errorMessage) {
-        (uiState.notice ?: uiState.errorMessage)?.let { message ->
-            snackbarHostState.showSnackbar(message = message)
+        val message = uiState.notice ?: uiState.errorMessage
+        message?.let {
+            snackbarHostState.showSnackbar(message = it.asString(context))
         }
     }
 
@@ -97,8 +101,8 @@ fun TicketCatalogScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             CieloAppHeader(
-                title = "Cielo Ingressos",
-                subtitle = "Compra rápida e segura para os seus eventos",
+                title = stringResource(R.string.catalog_title),
+                subtitle = stringResource(R.string.catalog_subtitle),
                 trailingContent = {
                     IconButton(
                         onClick = onOpenInventory,
@@ -123,12 +127,12 @@ fun TicketCatalogScreen(
             ) {
                 item {
                     Text(
-                        text = "Ingressos",
+                        text = stringResource(R.string.catalog_headline),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Escolha seus eventos e monte seu pedido.",
+                        text = stringResource(R.string.catalog_description),
                         modifier = Modifier.padding(top = 4.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -159,7 +163,7 @@ fun TicketCatalogScreen(
                             .fillMaxWidth()
                             .semantics { testTag = CatalogTestTags.CONTINUE_BUTTON }
                     ) {
-                        Text("Continuar")
+                        Text(stringResource(R.string.catalog_continue_button))
                     }
                 }
             }

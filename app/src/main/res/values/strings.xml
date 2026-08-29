@@ -1,3 +1,72 @@
 <resources>
     <string name="app_name">SellCie</string>
+
+    <!-- Cielo Payment Messages -->
+    <string name="cielo_outcome_approved">Pagamento aprovado com sucesso!</string>
+    <string name="cielo_outcome_canceled">Pagamento cancelado pelo usuário ou cartão bloqueado.</string>
+    <string name="cielo_outcome_insufficient_funds">Saldo insuficiente no cartão.</string>
+    <string name="cielo_outcome_expired_card">Cartão com data de validade vencida.</string>
+    <string name="cielo_outcome_not_authorized">Transação não autorizada pela operadora.</string>
+    <string name="cielo_outcome_declined">O cartão foi recusado. Verifique os dados ou use outro cartão.</string>
+    <string name="cielo_outcome_timeout">Tempo limite da transação esgotado. Tente novamente.</string>
+    <string name="cielo_outcome_system_error">Erro interno no sistema da Cielo. Tente novamente mais tarde.</string>
+    <string name="cielo_outcome_technical_error">Não foi possível concluir o pagamento por problemas técnicos.</string>
+    <string name="cielo_outcome_pending">O pagamento está em processamento.</string>
+
+    <!-- Catalog Screen -->
+    <string name="catalog_title">Cielo Ingressos</string>
+    <string name="catalog_subtitle">Compra rápida e segura para os seus eventos</string>
+    <string name="catalog_headline">Ingressos</string>
+    <string name="catalog_description">Escolha seus eventos e monte seu pedido.</string>
+    <string name="catalog_continue_button">Continuar</string>
+    <string name="catalog_error_load">Não foi possível carregar os eventos locais.</string>
+
+    <!-- Inventory Screen -->
+    <string name="inventory_notice_created">Evento cadastrado.</string>
+    <string name="inventory_notice_saved">Alterações de estoque salvas.</string>
+    <string name="inventory_error_save">Não foi possível salvar as alterações de estoque.</string>
+
+    <!-- Checkout Screen -->
+    <string name="checkout_title">Cielo Ingressos</string>
+    <string name="checkout_subtitle">Pagamento local seguro</string>
+    <string name="checkout_confirm_headline">Confirme sua compra</string>
+    <string name="checkout_confirm_description">Revise o pedido antes de confirmar o pagamento.</string>
+    <string name="checkout_order_summary">Resumo do pedido</string>
+    <string name="checkout_tickets_label">%1$d ingresso(s)</string>
+    <string name="checkout_local_notice">O pagamento será processado localmente após sua confirmação.</string>
+    <string name="checkout_confirm_button">Confirmar compra</string>
+    <string name="checkout_back_button">Voltar ao catálogo</string>
+    <string name="checkout_processing_title">Processando pagamento…</string>
+    <string name="checkout_processing_subtitle">Aguarde a confirmação local.</string>
+
+    <!-- Receipt Screen -->
+    <string name="receipt_subtitle">Comprovante da compra</string>
+    <string name="receipt_headline">Comprovante</string>
+    <string name="receipt_error_fetch">Não foi possível recuperar o comprovante local.</string>
+    <string name="receipt_items_title">Itens do pedido</string>
+    <string name="receipt_item_detail">%1$d ingresso(s) × %2$s = %3$s</string>
+    <string name="receipt_total_quantity">Quantidade total: %1$d</string>
+    <string name="receipt_total_label">Total: %1$s</string>
+    <string name="receipt_date_label">Data: %1$s</string>
+    <string name="receipt_reference_label">Referência: %1$s</string>
+    <string name="receipt_cielo_data_title">Dados Cielo</string>
+    <string name="receipt_cielo_brand">Bandeira: %1$s</string>
+    <string name="receipt_cielo_auth">Autorização: %1$s</string>
+    <string name="receipt_cielo_nsu">NSU: %1$s</string>
+    <string name="receipt_cielo_card">Cartão: %1$s</string>
+    <string name="receipt_cielo_terminal">Terminal: %1$s</string>
+    <string name="receipt_cielo_reason">Motivo: %1$s</string>
+    <string name="receipt_view_tickets">Ver meus ingressos</string>
+
+    <!-- Payment Outcomes Presentation -->
+    <string name="payment_outcome_approved_title">Pagamento aprovado</string>
+    <string name="payment_outcome_approved_msg">Compra confirmada com sucesso.</string>
+    <string name="payment_outcome_declined_title">Pagamento não aprovado</string>
+    <string name="payment_outcome_declined_msg">Nenhuma cobrança adicional foi enviada. Tente novamente.</string>
+    <string name="payment_outcome_canceled_title">Pagamento cancelado</string>
+    <string name="payment_outcome_canceled_msg">A tentativa foi cancelada com segurança.</string>
+    <string name="payment_outcome_technical_error_title">Erro técnico</string>
+    <string name="payment_outcome_technical_error_msg">Não foi possível concluir. Tente novamente.</string>
+    <string name="payment_outcome_pending_title">Pagamento pendente</string>
+    <string name="payment_outcome_pending_msg">A tentativa ainda está aguardando confirmação.</string>
 </resources>

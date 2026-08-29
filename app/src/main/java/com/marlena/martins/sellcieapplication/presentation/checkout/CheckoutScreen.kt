@@ -15,10 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.marlena.martins.sellcieapplication.R
 import com.marlena.martins.sellcieapplication.presentation.catalog.CatalogTestTags
 import com.marlena.martins.sellcieapplication.presentation.catalog.PaymentUiState
 import com.marlena.martins.sellcieapplication.presentation.catalog.components.CieloAppHeader
@@ -36,8 +38,8 @@ fun CheckoutScreen(
     Scaffold(
         topBar = {
             CieloAppHeader(
-                title = "Cielo Ingressos",
-                subtitle = "Pagamento local seguro"
+                title = stringResource(R.string.checkout_title),
+                subtitle = stringResource(R.string.checkout_subtitle)
             )
         }
     ) { innerPadding ->
@@ -48,9 +50,12 @@ fun CheckoutScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Confirme sua compra", style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Revise o pedido antes de confirmar o pagamento.",
+                text = stringResource(R.string.checkout_confirm_headline),
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                text = stringResource(R.string.checkout_confirm_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -58,10 +63,13 @@ fun CheckoutScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("Resumo do pedido", fontWeight = FontWeight.SemiBold)
-                    Text("$selectedTicketCount ingresso(s)")
                     Text(
-                        formatCurrency(totalInCents),
+                        text = stringResource(R.string.checkout_order_summary),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(text = stringResource(R.string.checkout_tickets_label, selectedTicketCount))
+                    Text(
+                        text = formatCurrency(totalInCents),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -71,7 +79,7 @@ fun CheckoutScreen(
             when (paymentState) {
                 PaymentUiState.Idle -> {
                     Text(
-                        "O pagamento será processado localmente após sua confirmação.",
+                        text = stringResource(R.string.checkout_local_notice),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Button(
@@ -79,13 +87,13 @@ fun CheckoutScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .semantics { testTag = CatalogTestTags.CHECKOUT_CONFIRM_BUTTON }
-                    ) { Text("Confirmar compra") }
+                    ) { Text(stringResource(R.string.checkout_confirm_button)) }
                     OutlinedButton(
                         onClick = onBack,
                         modifier = Modifier
                             .fillMaxWidth()
                             .semantics { testTag = CatalogTestTags.CHECKOUT_BACK_BUTTON }
-                    ) { Text("Voltar ao catálogo") }
+                    ) { Text(stringResource(R.string.checkout_back_button)) }
                 }
 
                 is PaymentUiState.Processing -> ProcessingContent()
@@ -99,7 +107,7 @@ fun CheckoutScreen(
                         .fillMaxWidth()
                         .semantics { testTag = CatalogTestTags.CHECKOUT_BACK_BUTTON }
                 ) {
-                    Text("Voltar ao catálogo")
+                    Text(stringResource(R.string.checkout_back_button))
                 }
             }
         }
@@ -114,9 +122,9 @@ private fun ProcessingContent() {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         CircularProgressIndicator()
-        Text("Processando pagamento…")
+        Text(stringResource(R.string.checkout_processing_title))
         Text(
-            "Aguarde a confirmação local.",
+            text = stringResource(R.string.checkout_processing_subtitle),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

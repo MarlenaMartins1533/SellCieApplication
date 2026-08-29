@@ -10,10 +10,7 @@ import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import java.nio.charset.StandardCharsets
 
 object CieloPaymentContract {
-    const val scheme = "sellcie"
-    const val host = "payment-result"
-    const val callbackUri = "$scheme://$host"
-    private const val paymentUri = "lio://payment"
+    private const val paymentUri = CieloConstants.PAYMENT_URI
 
     private val gson = Gson()
 
@@ -24,7 +21,7 @@ object CieloPaymentContract {
                 name = item.title,
                 unitPrice = item.unitPriceInCents,
                 quantity = item.quantity,
-                unitOfMeasure = "unidade"
+                unitOfMeasure = CieloConstants.DEFAULT_UNIT_OF_MEASURE
             )
         }.toMutableList()
 
@@ -32,9 +29,9 @@ object CieloPaymentContract {
             clientID = clientId,
             accessToken = accessToken,
             value = request.totalInCents,
-            paymentCode = "DEBITO_AVISTA",
-            installments = 1,
-            email = "vendedor@sellcie.com.br",
+            paymentCode = CieloConstants.DEFAULT_PAYMENT_CODE,
+            installments = CieloConstants.DEFAULT_INSTALLMENTS,
+            email = CieloConstants.DEFAULT_EMAIL,
             merchantCode = null,
             reference = request.purchaseId,
             items = items
@@ -48,12 +45,13 @@ object CieloPaymentContract {
         Uri.parse(paymentUri)
             .buildUpon()
             .appendQueryParameter("request", encodedRequest(request, clientId, accessToken))
-            .appendQueryParameter("urlCallback", callbackUri)
+            .appendQueryParameter("urlCallback", CieloConstants.CALLBACK_URI)
             .build()
 
     fun parseCallback(uri: Uri?): CieloCallback {
-        val encodedResponse = uri?.getQueryParameter("response") ?: throw IllegalArgumentException("Resposta ausente.")
-        val responseCode = uri.getQueryParameter("responsecode")?.toIntOrNull()
+        val encodedResponse = uri?.getQueryParameter(CieloConstants.PARAM_RESPONSE) 
+            ?: throw IllegalArgumentException("Resposta ausente.")
+        val responseCode = uri.getQueryParameter(CieloConstants.PARAM_RESPONSE_CODE)?.toIntOrNull()
             ?: throw IllegalArgumentException("Código de resposta ausente.")
 
         val responseJson = String(Base64.decode(encodedResponse, Base64.DEFAULT), StandardCharsets.UTF_8)
@@ -64,16 +62,16 @@ object CieloPaymentContract {
             val order = gson.fromJson(responseJson, Order::class.java)
             if (order?.id != null && order.payments != null && order.payments.isNotEmpty()) {
                 val payment = order.payments.first()
-                payment.authCode.takeIf { it.isNotBlank() }?.let { metadata["authCode"] = it }
-                payment.cieloCode.takeIf { it.isNotBlank() }?.let { metadata["cieloCode"] = it }
-                payment.brand.takeIf { it.isNotBlank() }?.let { metadata["brand"] = it }
-                payment.mask.takeIf { it.isNotBlank() }?.let { metadata["mask"] = it }
-                payment.terminal.takeIf { it.isNotBlank() }?.let { metadata["terminal"] = it }
+                payment.authCode.takeIf { it.isNotBlank() }?.let { metadata[CieloConstants.KEY_AUTH_CODE] = it }
+                payment.cieloCode.takeIf { it.isNotBlank() }?.let { metadata[CieloConstants.KEY_CIELO_CODE] = it }
+                payment.brand.takeIf { it.isNotBlank() }?.let { metadata[CieloConstants.KEY_BRAND] = it }
+                payment.mask.takeIf { it.isNotBlank() }?.let { metadata[CieloConstants.KEY_CARD_MASK] = it }
+                payment.terminal.takeIf { it.isNotBlank() }?.let { metadata[CieloConstants.KEY_TERMINAL] = it }
                 null 
             } else {
                 // Tenta o formato de erro {"code": X, "reason": "..."}
                 val error = gson.fromJson(responseJson, CieloErrorResponse::class.java)
-                error?.reason?.let { metadata["reason"] = it }
+                error?.reason?.let { metadata[CieloConstants.KEY_REASON] = it }
                 error?.code
             }
         } catch (_: Exception) {

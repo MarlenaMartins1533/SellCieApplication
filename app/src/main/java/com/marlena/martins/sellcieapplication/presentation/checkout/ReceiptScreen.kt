@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -13,10 +15,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.marlena.martins.sellcieapplication.R
+import com.marlena.martins.sellcieapplication.data.payment.CieloConstants
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.usecase.PurchaseReceipt
 import com.marlena.martins.sellcieapplication.presentation.catalog.CatalogTestTags
@@ -31,42 +36,74 @@ fun ReceiptScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Scaffold(topBar = { CieloAppHeader("Cielo Ingressos", "Comprovante da compra") }) { padding ->
+    Scaffold(
+        topBar = { 
+            CieloAppHeader(
+                title = stringResource(R.string.checkout_title),
+                subtitle = stringResource(R.string.receipt_subtitle)
+            ) 
+        }
+    ) { padding ->
         Column(
-            modifier = modifier.fillMaxSize().padding(padding).padding(20.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(20.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Comprovante", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                text = stringResource(R.string.receipt_headline),
+                style = MaterialTheme.typography.headlineMedium
+            )
             if (receipt == null || outcome == null) {
-                Text("Não foi possível recuperar o comprovante local.")
+                Text(text = stringResource(R.string.receipt_error_fetch))
             } else {
-                val (title, message) = outcome.presentation()
+                val (titleRes, messageRes) = outcome.presentation()
                 Card(modifier = Modifier.fillMaxWidth().semantics { testTag = CatalogTestTags.RECEIPT_CARD }) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Itens do pedido", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = stringResource(titleRes),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(messageRes),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.receipt_items_title),
+                            fontWeight = FontWeight.SemiBold
+                        )
                         receipt.items.forEach { item ->
                             Text(item.title, fontWeight = FontWeight.Medium)
                             Text(
-                                "${item.quantity} ingresso(s) × ${formatCurrency(item.unitPriceInCents)} = " +
-                                    formatCurrency(item.subtotalInCents),
+                                text = stringResource(
+                                    R.string.receipt_item_detail,
+                                    item.quantity,
+                                    formatCurrency(item.unitPriceInCents),
+                                    formatCurrency(item.subtotalInCents)
+                                ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Text("Quantidade total: ${receipt.totalQuantity}")
-                        Text("Total: ${formatCurrency(receipt.totalInCents)}")
-                        Text("Data: ${receipt.formattedDate}")
-                        Text("Referência: ${receipt.shortReference}")
+                        Text(text = stringResource(R.string.receipt_total_quantity, receipt.totalQuantity))
+                        Text(text = stringResource(R.string.receipt_total_label, formatCurrency(receipt.totalInCents)))
+                        Text(text = stringResource(R.string.receipt_date_label, receipt.formattedDate))
+                        Text(text = stringResource(R.string.receipt_reference_label, receipt.shortReference))
 
                         receipt.cieloMetadata?.let { meta ->
-                            Text("Dados Cielo", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
-                            meta["brand"]?.let { Text("Bandeira: $it") }
-                            meta["authCode"]?.let { Text("Autorização: $it") }
-                            meta["cieloCode"]?.let { Text("NSU: $it") }
-                            meta["mask"]?.let { Text("Cartão: $it") }
-                            meta["terminal"]?.let { Text("Terminal: $it") }
-                            meta["reason"]?.let { Text("Motivo: $it", color = MaterialTheme.colorScheme.error) }
+                            Text(
+                                text = stringResource(R.string.receipt_cielo_data_title),
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            meta[CieloConstants.KEY_BRAND]?.let { Text(stringResource(R.string.receipt_cielo_brand, it)) }
+                            meta[CieloConstants.KEY_AUTH_CODE]?.let { Text(stringResource(R.string.receipt_cielo_auth, it)) }
+                            meta[CieloConstants.KEY_CIELO_CODE]?.let { Text(stringResource(R.string.receipt_cielo_nsu, it)) }
+                            meta[CieloConstants.KEY_CARD_MASK]?.let { Text(stringResource(R.string.receipt_cielo_card, it)) }
+                            meta[CieloConstants.KEY_TERMINAL]?.let { Text(stringResource(R.string.receipt_cielo_terminal, it)) }
+                            meta[CieloConstants.KEY_REASON]?.let { Text(stringResource(R.string.receipt_cielo_reason, it), color = MaterialTheme.colorScheme.error) }
                         }
                     }
                 }
@@ -77,20 +114,20 @@ fun ReceiptScreen(
                     modifier = Modifier.fillMaxWidth().semantics {
                         testTag = CatalogTestTags.RECEIPT_VIEW_TICKETS_BUTTON
                     }
-                ) { Text("Ver meus ingressos") }
+                ) { Text(stringResource(R.string.receipt_view_tickets)) }
             }
             OutlinedButton(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth().semantics { testTag = CatalogTestTags.RECEIPT_BACK_BUTTON }
-            ) { Text("Voltar ao catálogo") }
+            ) { Text(stringResource(R.string.checkout_back_button)) }
         }
     }
 }
 
-private fun PaymentOutcome.presentation(): Pair<String, String> = when (this) {
-    PaymentOutcome.Approved -> "Pagamento aprovado" to "Compra confirmada com sucesso."
-    PaymentOutcome.Declined -> "Pagamento não aprovado" to "Nenhuma cobrança adicional foi enviada. Tente novamente."
-    PaymentOutcome.Canceled -> "Pagamento cancelado" to "A tentativa foi cancelada com segurança."
-    PaymentOutcome.TechnicalError -> "Erro técnico" to "Não foi possível concluir. Tente novamente."
-    PaymentOutcome.Pending -> "Pagamento pendente" to "A tentativa ainda está aguardando confirmação."
+private fun PaymentOutcome.presentation(): Pair<Int, Int> = when (this) {
+    PaymentOutcome.Approved -> R.string.payment_outcome_approved_title to R.string.payment_outcome_approved_msg
+    PaymentOutcome.Declined -> R.string.payment_outcome_declined_title to R.string.payment_outcome_declined_msg
+    PaymentOutcome.Canceled -> R.string.payment_outcome_canceled_title to R.string.payment_outcome_canceled_msg
+    PaymentOutcome.TechnicalError -> R.string.payment_outcome_technical_error_title to R.string.payment_outcome_technical_error_msg
+    PaymentOutcome.Pending -> R.string.payment_outcome_pending_title to R.string.payment_outcome_pending_msg
 }

@@ -2,6 +2,7 @@ package com.marlena.martins.sellcieapplication.presentation.catalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.marlena.martins.sellcieapplication.R
 import com.marlena.martins.sellcieapplication.domain.model.CartItem
 import com.marlena.martins.sellcieapplication.domain.model.Event
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
@@ -103,7 +104,7 @@ class TicketViewModel(
         mutableUiState.value = state.copy(
             events = persistedEvents,
             inventoryDraftEvents = state.inventoryDraftEvents + persistedEvent,
-            notice = "Evento cadastrado."
+            notice = UiText.StringResource(R.string.inventory_notice_created)
         )
         true
     }.getOrDefault(false)
@@ -136,12 +137,14 @@ class TicketViewModel(
                     inventoryDraftEvents = savedEvents,
                     quantitiesByEventId = quantities,
                     totalInCents = calculateTotal(savedEvents, quantities),
-                    notice = "Alterações de estoque salvas."
+                    notice = UiText.StringResource(R.string.inventory_notice_saved)
                 )
                 true
             },
             onFailure = {
-                mutableUiState.value = state.copy(notice = "Não foi possível salvar as alterações de estoque.")
+                mutableUiState.value = state.copy(
+                    notice = UiText.StringResource(R.string.inventory_error_save)
+                )
                 false
             }
         )
@@ -166,7 +169,6 @@ class TicketViewModel(
             }
         }
         val request = PaymentRequest(
-            // MerchantOrderId aceita somente caracteres alfanuméricos na API Cielo.
             purchaseId = UUID.randomUUID().toString().replace("-", ""),
             totalInCents = state.totalInCents,
             items = purchasedItems
@@ -214,7 +216,9 @@ class TicketViewModel(
         mutableUiState.value = runCatching { eventRepository.getEvents() }
             .fold(
                 onSuccess = { events -> TicketUiState(events = events) },
-                onFailure = { TicketUiState(errorMessage = "Não foi possível carregar os eventos locais.") }
+                onFailure = { TicketUiState(
+                    errorMessage = UiText.StringResource(R.string.catalog_error_load)
+                ) }
             )
     }
 

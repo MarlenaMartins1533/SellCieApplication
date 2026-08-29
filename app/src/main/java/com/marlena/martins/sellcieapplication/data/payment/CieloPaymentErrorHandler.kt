@@ -1,42 +1,52 @@
 package com.marlena.martins.sellcieapplication.data.payment
 
+import androidx.annotation.StringRes
+import com.marlena.martins.sellcieapplication.R
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 
 /** Centraliza o mapeamento técnico da Cielo para resultados do domínio e mensagens seguras. */
 class CieloPaymentErrorHandler {
+    
     fun outcome(responseCode: Int?, cieloCode: Int?): PaymentOutcome = when {
         // Sucesso: responseCode 0 e sem código de erro explícito (recebeu objeto Order)
-        responseCode == 0 && cieloCode == null -> PaymentOutcome.Approved
+        responseCode == CieloConstants.CODE_SUCCESS && cieloCode == null -> PaymentOutcome.Approved
         
-        // Simulação de Sucesso via código (opcional, dependendo do emulador)
-        cieloCode == 0 -> PaymentOutcome.Approved
+        // Simulação de Sucesso via código
+        cieloCode == CieloConstants.CODE_SUCCESS -> PaymentOutcome.Approved
         
-        // Cancelamentos (78 é o Magic Value, 1 é o padrão do Deep Link)
-        cieloCode == 78 || cieloCode == 1 -> PaymentOutcome.Canceled
+        // Cancelamentos
+        cieloCode == CieloConstants.CODE_CANCELED || cieloCode == CieloConstants.CODE_USER_CANCELED -> 
+            PaymentOutcome.Canceled
         
-        // Declinados (Magic Values)
-        cieloCode == 51 || cieloCode == 54 || cieloCode == 5 || cieloCode == 25 -> PaymentOutcome.Declined
+        // Declinados
+        cieloCode == CieloConstants.CODE_INSUFFICIENT_FUNDS || 
+        cieloCode == CieloConstants.CODE_EXPIRED_CARD || 
+        cieloCode == CieloConstants.CODE_NOT_AUTHORIZED || 
+        cieloCode == CieloConstants.CODE_DECLINED -> 
+            PaymentOutcome.Declined
         
-        // Erros Técnicos (Magic Values)
-        cieloCode == 98 || cieloCode == 99 -> PaymentOutcome.TechnicalError
+        // Erros Técnicos
+        cieloCode == CieloConstants.CODE_TIMEOUT || cieloCode == CieloConstants.CODE_SYSTEM_ERROR -> 
+            PaymentOutcome.TechnicalError
         
         else -> PaymentOutcome.TechnicalError
     }
 
-    fun userMessage(outcome: PaymentOutcome, cieloCode: Int? = null): String = when (outcome) {
-        PaymentOutcome.Approved -> "Pagamento aprovado com sucesso!"
-        PaymentOutcome.Canceled -> "Pagamento cancelado pelo usuário ou cartão bloqueado."
+    @StringRes
+    fun userMessage(outcome: PaymentOutcome, cieloCode: Int? = null): Int = when (outcome) {
+        PaymentOutcome.Approved -> R.string.cielo_outcome_approved
+        PaymentOutcome.Canceled -> R.string.cielo_outcome_canceled
         PaymentOutcome.Declined -> when (cieloCode) {
-            51 -> "Saldo insuficiente no cartão."
-            54 -> "Cartão com data de validade vencida."
-            5 -> "Transação não autorizada pela operadora."
-            else -> "O cartão foi recusado. Verifique os dados ou use outro cartão."
+            CieloConstants.CODE_INSUFFICIENT_FUNDS -> R.string.cielo_outcome_insufficient_funds
+            CieloConstants.CODE_EXPIRED_CARD -> R.string.cielo_outcome_expired_card
+            CieloConstants.CODE_NOT_AUTHORIZED -> R.string.cielo_outcome_not_authorized
+            else -> R.string.cielo_outcome_declined
         }
         PaymentOutcome.TechnicalError -> when (cieloCode) {
-            98 -> "Tempo limite da transação esgotado. Tente novamente."
-            99 -> "Erro interno no sistema da Cielo. Tente novamente mais tarde."
-            else -> "Não foi possível concluir o pagamento por problemas técnicos."
+            CieloConstants.CODE_TIMEOUT -> R.string.cielo_outcome_timeout
+            CieloConstants.CODE_SYSTEM_ERROR -> R.string.cielo_outcome_system_error
+            else -> R.string.cielo_outcome_technical_error
         }
-        PaymentOutcome.Pending -> "O pagamento está em processamento."
+        PaymentOutcome.Pending -> R.string.cielo_outcome_pending
     }
 }

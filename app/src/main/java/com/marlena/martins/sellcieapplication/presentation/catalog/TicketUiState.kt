@@ -12,8 +12,8 @@ data class TicketUiState(
     val screen: TicketScreen = TicketScreen.CATALOG,
     val paymentState: PaymentUiState = PaymentUiState.Idle,
     val receipt: PurchaseReceipt? = null,
-    val notice: String? = null,
-    val errorMessage: String? = null
+    val notice: UiText? = null,
+    val errorMessage: UiText? = null
 ) {
     val selectedTicketCount: Int
         get() = quantitiesByEventId.values.sum()
@@ -37,11 +37,7 @@ data class TicketUiState(
 }
 
 enum class TicketScreen {
-    CATALOG,
-    CHECKOUT,
-    RECEIPT,
-    MY_TICKETS,
-    INVENTORY
+    CATALOG, CHECKOUT, RECEIPT, MY_TICKETS, INVENTORY
 }
 
 sealed interface PaymentUiState {

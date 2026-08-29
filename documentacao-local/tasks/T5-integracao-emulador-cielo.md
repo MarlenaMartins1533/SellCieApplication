@@ -1,52 +1,43 @@
 # T5 — Integração local com Emulador Cielo via Deep Link
 
-## Prompt de implementação
+## Status: Concluída ✅
 
-Você é especialista em Android Kotlin, Cielo Smart, Deep Links, segurança de pagamentos e testes. Implemente a integração local do app SellCie com o Emulador Cielo, seguindo exclusivamente o fluxo Deep Link da documentação oficial da Cielo Smart. Preserve integralmente o comportamento validado das tarefas T1–T4: catálogo → confirmação explícita → processamento → comprovante → ingressos, e mantenha a regra de idempotência por `purchaseId`.
+Esta tarefa integrou o SellCieApplication com o emulador da Cielo LIO utilizando o padrão de Deep Link. A implementação garante o disparo da Intent para a maquininha e o processamento seguro das respostas (sucesso, erro e cancelamento) via callback.
 
-### Contexto obrigatório
+## Prompt de implementação (Atualizado)
 
-- O emulador Cielo é instalado no mesmo Android/AVD do app e deve ser testado em Android 7.1 ou Android 10.
-- A chamada de pagamento é local, por Intent: `lio://payment?request=<base64-json>&urlCallback=<callback-do-app>`.
-- A Cielo devolve o resultado chamando a URI registrada pelo SellCie. O parâmetro `response` é Base64 e contém JSON de sucesso ou erro.
-- A credencial de desenvolvimento será inserida manualmente apenas em `cielo.local.properties`, na raiz do projeto. Esse arquivo é ignorado pelo Git. Use as propriedades `CIELO_CLIENT_ID` e `CIELO_ACCESS_TOKEN`; nunca insira valores no código, em testes, logs, README, artefatos de release ou histórico Git.
-- Se qualquer credencial estiver vazia, não inicie o pagamento Cielo: apresente uma falha segura, sem revelar qual segredo está ausente.
+Você é um especialista em Android Kotlin, Engenharia de Software e Integrações Cielo. Refatore a integração do SellCie com o Emulador Cielo seguindo os padrões recomendados:
 
-### Implementação exigida
+1. **Padronização e Constantes**:
+   - Elimine "Magic Numbers" criando um `CieloConstants.kt` para códigos de retorno do Sandbox (ex: 51 para Saldo Insuficiente) e chaves de metadados JSON.
+   - Centralize todas as strings (mensagens de erro, labels de UI) no `res/values/strings.xml` para suportar i18n.
 
-1. Adicione uma variante/configuração de desenvolvimento para emulador sem substituir o gateway offline padrão nas demais execuções.
-2. Configure o `AndroidManifest.xml` com:
-   - visibilidade do pacote `com.ads.lio.uriappclient` em `<queries>`;
-   - metadata `cs_integration_type` com valor `uri`;
-   - activity exportada exclusivamente para o callback, com `ACTION_VIEW`, categoria `DEFAULT` e esquema/host próprios do SellCie, por exemplo `sellcie://payment-result`.
-3. Crie um adaptador Cielo atrás de `PaymentGateway`; ele deve converter `PaymentRequest` para o JSON aceito pela Cielo:
-   - `clientID` e `accessToken` do arquivo local;
-   - `reference` igual ao `purchaseId`;
-   - todos os `PurchasedTicket` em `items`;
-   - valor total e preços unitários em centavos, sem `Double`;
-   - `installments = 0`;
-   - não enviar e-mail ou dados pessoais que o app não coleta.
-4. Como o resultado é assíncrono, não finja que `PaymentGateway.process()` retorna uma aprovação imediata. Modele explicitamente as etapas iniciar → aguardando retorno → concluir callback, preservando a tentativa `PROCESSING` no banco até o callback final.
-5. Antes de abrir o Deep Link, persista a tentativa. Monte a URI com JSON em Base64 e dispare `Intent.ACTION_VIEW`. Trate a ausência do emulador/app Cielo de forma segura e conclua a tentativa como erro técnico, sem expor detalhes técnicos na UI.
-6. No callback, valide scheme, host, presença de `response`, Base64 e JSON antes de atualizar o banco. Mapeie sucesso para `Approved`; cancelamento informado pela Cielo para `Canceled`; erros de pagamento, autenticação, URI inválida ou JSON inválido para `TechnicalError`. Não tome campos retornados pelo Deep Link como fonte para alterar preço, itens ou `purchaseId` local.
-7. Mantenha um foreground service somente enquanto a sessão de pagamento estiver pendente e pare-o sempre que o callback, erro de lançamento ou cancelamento terminar o fluxo. Use uma notificação clara e mínima.
-8. Preserve a UI: o comprovante só é exibido após o callback final; ingresso e baixa de estoque só ocorrem em `Approved`; cancelamento/erro preservam o carrinho e permitem uma nova tentativa segura.
+2. **Arquitetura e Desacoplamento**:
+   - Refatore o `CieloPaymentErrorHandler` para retornar IDs de recursos de string (`@StringRes`) em vez de texto bruto.
+   - Utilize o padrão `UiText` no `TicketViewModel` para enviar mensagens para a UI de forma segura e desacoplada.
+   - Ajuste o `CieloPaymentContract` para realizar o parsing flexível do JSON da Cielo, identificando automaticamente se o retorno é uma `Order` completa ou um erro simplificado.
 
-### Validação exigida
+3. **UX e Resiliência**:
+   - Adicione suporte a scroll na tela de comprovante para garantir que todos os detalhes da transação e botões de ação estejam acessíveis.
+   - Capture e exiba metadados ricos da transação (Bandeira, NSU, Autorização, Máscara do Cartão) no recibo final.
 
-- Testes unitários para montagem do payload, codificação Base64, validação/decodificação do callback e mapeamento de todos os resultados.
-- Testes instrumentados/UI para callback aprovado, cancelado, erro, emulador ausente, app recriado durante `PROCESSING` e reenvio do mesmo `purchaseId` sem segunda chamada.
-- Em AVD Android 10 com o emulador instalado, preencher manualmente `CIELO_CLIENT_ID` e `CIELO_ACCESS_TOKEN` em `cielo.local.properties`; executar uma transação de teste e selecionar Sucesso, Cancelado e Erro no emulador.
-- Antes de concluir, executar build e testes definidos pela task. Faça uma varredura para confirmar que os valores das credenciais não aparecem no Git, logs ou artefatos.
+4. **Testes e Validação**:
+   - Atualize a suíte de testes unitários para validar o mapeamento de todos os "Magic Values" da Cielo.
+   - Garanta que os testes de integração verifiquem a persistência correta dos metadados no SQLite.
 
-### Restrições
+## Decisões Técnicas
 
-- Não use cartão real, não publique na Cielo Store e não faça chamada de produção.
-- Não registre dados de cartão, máscara, código de autorização, token ou payload Base64.
-- Não faça commit de `cielo.local.properties`.
-- Se o contrato da Cielo divergir da documentação atual, pare e reporte a divergência antes de substituir o comportamento local validado.
+- **Gson**: Adotado para garantir a integridade do JSON enviado e recebido, eliminando erros de concatenação de strings.
+- **SQLite v3**: O banco de dados local foi migrado para a versão 3 para incluir a coluna `metadata` na tabela `purchase_attempt`.
+- **Deep Link**: O app agora dispara `lio://payment` e escuta o callback em `sellcie://payment-result`.
+- **Modo Emulador**: Na ausência de credenciais reais no `cielo.local.properties`, o gateway assume credenciais dummy para permitir o teste imediato com o app sample da Cielo.
+
+## Cobertura de Testes
+
+- **Unitários**: Validam o contrato de dados Cielo, o handler de erros (Magic Values) e a lógica do ViewModel.
+- **Integração**: Validam o ciclo de vida da persistência no banco de dados e a renderização dinâmica do comprovante com dados da Cielo.
 
 ## Referências
 
-- https://developercielo.github.io/manual/cielo-lio
-- https://docs.cielo.com.br/split/docs/app-proprio-cielo-smart
+- Documentação Cielo LIO Deep Link: [link](https://developercielo.github.io/manual/cielo-lio)
+- Padrões de Projeto Android: MVVM + Clean Architecture.

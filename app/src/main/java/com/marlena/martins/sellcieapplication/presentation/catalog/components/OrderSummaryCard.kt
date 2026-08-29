@@ -12,10 +12,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.marlena.martins.sellcieapplication.R
 import com.marlena.martins.sellcieapplication.presentation.catalog.CatalogTestTags
 import com.marlena.martins.sellcieapplication.presentation.catalog.formatCurrency
 
@@ -41,14 +43,17 @@ fun OrderSummaryCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("Seu pedido", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "$selectedTicketCount ingresso(s)",
+                    text = stringResource(R.string.checkout_order_summary),
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = stringResource(R.string.checkout_tickets_label, selectedTicketCount),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
             Text(
-                formatCurrency(totalInCents),
+                text = formatCurrency(totalInCents),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.End

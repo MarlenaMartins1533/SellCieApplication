@@ -1,62 +1,61 @@
-# Cielo Ingressos
+# 🎫 SellCie — A Revolução na Venda de Ingressos Presencial
 
-Aplicativo Android offline para catálogo de eventos, seleção de ingressos, pagamento determinístico local e comprovante persistido no dispositivo.
+Bem-vindo ao **SellCie**, a solução definitiva para venda de ingressos diretamente em terminais inteligentes. Este MVP (Produto Mínimo Viável) foi desenhado para oferecer uma experiência de compra fluida, segura e totalmente integrada ao ecossistema **Cielo Smart**.
 
-## Identidade visual
+## 🚀 O que é o SellCie?
+O SellCie é um aplicativo Android focado em produtores de eventos que precisam de mobilidade e agilidade. Ele transforma a maquininha de cartão em um ponto de venda completo: do catálogo de eventos à entrega do ingresso com QR Code.
 
-O aplicativo é exibido como **SellCie**. O launcher icon usa um ticket azul com marca de confirmação, criado para o projeto e distribuído em PNG nas densidades Android (`mdpi` a `xxxhdpi`). A geração foi feita localmente com uma ferramenta de IA, sem texto, marcas de terceiros ou dados de pessoas.
+### Por que usar o SellCie?
+- **Agilidade no Checkout**: Seleção rápida de ingressos e cálculo automático de totais.
+- **Segurança Total**: Integração nativa com a Cielo LIO, garantindo transações criptografadas.
+- **Funcionamento Offline**: O catálogo e o histórico de compras são persistidos localmente, garantindo que você nunca perca uma venda.
+- **Experiência Digital**: Ingressos gerados na hora com identificadores únicos para validação futura.
 
-## Tecnologias utilizadas
+---
 
-- Kotlin 2.2.21, Android Gradle Plugin 9.1.1, Android SDK 36 e Java 11
-- AppCompat, Fragment KTX e Jetpack Compose Material 3
-- Arquitetura MVVM com `ViewModel`, `StateFlow`, Repository e casos de uso
-- `SQLiteOpenHelper` nativo para persistência local de tentativas e itens da compra
-- Deep Link Android via `Intent.ACTION_VIEW` para a integração Cielo Smart
-- Base64 UTF-8 para transporte do payload e retorno da Cielo
-- Foreground Service para manter a sessão de pagamento visível enquanto aguarda callback
-- JUnit 4, testes unitários e Compose UI Test instrumentado
+## 🛠 Funcionalidades do MVP
 
-## Prompts utilizados
+### 1. Catálogo Inteligente
+Visualize seus eventos em uma interface moderna e intuitiva. Controle a quantidade de ingressos com um simples toque e tenha o resumo do pedido sempre à mão.
 
-Os prompts de produto e implementação utilizados no desenvolvimento estão preservados em `documentacao-local`:
+### 2. Pagamento de Última Geração
+Integração via **Deep Link** com a Cielo. Ao confirmar a compra, o SellCie aciona automaticamente o módulo de pagamento da maquininha, suportando:
+- ✅ Cartão de Débito e Crédito.
+- ✅ Simulação de cenários (Saldo insuficiente, cancelamento, etc) via emulador.
+- ✅ Retorno automático com dados de NSU e Autorização.
 
-- [T4 — Integrações remotas controladas](documentacao-local/tasks/T4.md)
-- [T5 — Integração local com Emulador Cielo via Deep Link](documentacao-local/tasks/T5-integracao-emulador-cielo.md)
-- `Registro_Prompts_IA_App_Ingressos.docx`, com o histórico de prompts do aplicativo
+### 3. Comprovante e Gestão
+Recibos detalhados que exibem não apenas os itens comprados, mas também os dados técnicos da transação (Bandeira, NSU), garantindo transparência para o vendedor e o cliente.
 
-O prompt da T5 orientou a criação da variante `cieloEmulator`, o contrato `lio://payment`, o callback `sellcie://payment-result`, a persistência idempotente por `purchaseId`, o tratamento seguro de credenciais e a separação entre gateway local e Cielo.
+### 4. Meus Ingressos
+Após a aprovação, o cliente tem acesso imediato aos ingressos individuais, cada um com seu próprio QR Code (identificador único) pronto para ser validado na entrada do evento.
 
-## Fluxo e arquitetura
+---
 
-O fluxo é catálogo → seleção → confirmação da compra → processamento → comprovante. A confirmação exibe quantidade e total antes de iniciar o pagamento, permitindo voltar ao catálogo sem criar uma tentativa. O gateway padrão é `LocalPaymentGateway`, sem rede, credenciais ou transação externa. `ProcessPayment` cria/consulta uma tentativa pelo `purchaseId`; uma tentativa finalizada nunca chama o gateway novamente. Resultados aprovados, negados, cancelados e erros técnicos são persistidos localmente.
+## 📖 Como Usar (Guia Rápido)
 
-Em um comprovante aprovado, a ação **Ver meus ingressos** abre uma lista de cartões individuais: cada unidade comprada recebe nome, numeração e um campo próprio reservado ao QR Code. O identificador do campo é determinístico por compra, evento e unidade; a geração de QR Code escaneável segue fora do escopo offline atual. Ao voltar ao catálogo depois de uma compra aprovada, o carrinho é limpo. Em resultados não aprovados, a seleção é preservada para uma nova tentativa.
+1.  **Explorar**: Abra o app e veja a lista de eventos disponíveis.
+2.  **Selecionar**: Escolha a quantidade de ingressos para cada evento.
+3.  **Confirmar**: Clique em "Continuar" para revisar seu pedido.
+4.  **Pagar**: Clique em "Confirmar Compra". O app abrirá a interface da Cielo. Passe o cartão e digite a senha.
+5.  **Receber**: Após o sucesso, veja seu comprovante detalhado.
+6.  **Acessar**: Clique em "Ver meus ingressos" para visualizar os QR Codes da sua compra.
 
-Na variante `debug`, o gateway continua local e determinístico. Na variante `cieloEmulator`, `CieloPaymentGateway` implementa `PaymentGateway`, abre o app Cielo por deep link e conclui a tentativa somente após o callback validado. O pacote documentado é `com.ads.lio.uriappclient`; no dispositivo físico usado para validação foi encontrado também `br.com.cielosmart.orderservice`, por isso ambos têm visibilidade declarada no Manifest.
+---
 
-O fluxo aprovado é: persistir tentativa como `PROCESSING` → abrir a Cielo → receber e validar callback → concluir a tentativa → abater estoque → exibir comprovante → abrir os ingressos comprados. A baixa de estoque ocorre somente para `Approved`, e o carrinho é preservado em cancelamentos e erros.
+## 🔧 Informações para Desenvolvedores
 
-## Execução local
+### Tecnologias
+- **UI**: Jetpack Compose (Material 3)
+- **Arquitetura**: MVVM + Clean Architecture
+- **Persistência**: SQLite (Local storage)
+- **Integração**: Deep Link Cielo Smart + Gson para payloads JSON.
 
-Abra o projeto no Android Studio com SDK 36 disponível.
+### Execução de Teste (Emulador)
+Para testar a integração com a maquininha:
+1. Certifique-se de ter o **Cielo LIO Emulator** instalado.
+2. Utilize o comando: `./gradlew assembleCieloEmulator`
+3. Execute a variante de build `cieloEmulator`.
 
-Para o fluxo offline, execute a variante `debug`; não é necessário configurar credencial nem conexão de rede.
-
-Para testar o emulador Cielo, crie `cielo.local.properties` na raiz a partir de [cielo.local.properties.example](cielo.local.properties.example), preencha `CIELO_CLIENT_ID` e `CIELO_ACCESS_TOKEN` somente no ambiente local autorizado e execute a variante `cieloEmulator`:
-
-```bash
-./gradlew assembleCieloEmulator
-```
-
-`cielo.local.properties` é ignorado pelo Git. As credenciais não devem aparecer em código, logs, testes, documentação ou artefatos de produção.
-
-## Validação
-
-```bash
-./gradlew testDebugUnitTest assembleDebug assembleCieloEmulator
-```
-
-Os testes unitários cobrem persistência/idempotência, montagem do payload, Base64, validação do callback e mapeamento dos resultados. Os testes instrumentados/UI cobrem confirmação explícita, persistência, comprovante itemizado e ingressos individuais. A validação real da transação Cielo exige credenciais locais preenchidas, o app Cielo instalado e seleção manual de sucesso, cancelamento ou erro no emulador.
-
-O campo apresentado na tela de ingressos atualmente exibe o payload determinístico reservado para o QR Code; a geração de uma imagem QR escaneável ainda não faz parte desta entrega offline.
+---
+**SellCie**: Vendendo experiências, simplificando pagamentos.
