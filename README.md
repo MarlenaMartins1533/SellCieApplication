@@ -4,7 +4,7 @@
 
 ## 🎫  Solução Integrada de Venda de Ingressos
 
-O **SellCie** é um ponto de venda (PDV) móvel completo, projetado para operar de forma offline e integrada aos terminais **Cielo Smart**. Ele permite a produtores de eventos gerenciar catálogos, realizar vendas seguras e entregar ingressos digitais com QR Code instantaneamente.
+O **SellCie** é um ponto de venda (PDV) móvel completo, projetado para operar de forma offline e integrada aos terminais **Cielo Smart**. Ele permite a produtores de eventos gerenciar catálogos, realizar vendas seguras e entregar ingressos digitais com QR Code instantaneamente. **Informações adicionais**: [Documentação](./documentacao-local)
 
 <img src="Cielo Ingressos.png" width="100" alt="Logo"> <img src="Ver meus ingressos.png" width="100" alt="Logo"> <img src="Ver meus ingressos end.png" width="100" alt="Logo">
 
@@ -80,5 +80,8 @@ Para rodar os testes unitários:
 
 ## 🏁 Conclusão do MVP
 O SellCie entrega uma base sólida para um ecossistema de eventos. Com foco em **segurança**, **padronização profissional** (eliminação de magic numbers) e **excelência em UX** (scroll, mensagens claras e feedbacks técnicos), o projeto está pronto para evoluir para uma solução de larga escala.
+
+- **Documentação adicional**: [Documentação](./documentacao-local)
+
 
 **Desenvolvido por**: Marlena Martins (com auxílio da IA Gemini 2.0 Flash)
