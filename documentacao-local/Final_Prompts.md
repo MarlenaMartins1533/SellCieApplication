@@ -26,3 +26,14 @@ Este documento registra os prompts finais utilizados para elevar o nível de qua
 1. Reescrita do `README.md` com foco em valor de negócio e guia de uso.
 2. Adição da sessão "Conclusão do Projeto" no documento de informações técnicas.
 3. Criação deste log de prompts finais.
+
+## Prompt: Documentação Técnica e README Profissional
+
+**Objetivo**: Estruturar o README com detalhes arquiteturais, bibliotecas e instruções conforme solicitado no case.
+
+> "Ajuste no README. crie os itens da lista na imagem, usando os outros documentos do projeto como consulta. formate o doc para ter o design igual ao documento do documentacao-local/Case base Android para uso no estudo aplicado.pdf"
+
+**Ações realizadas pela IA**:
+1. Inclusão das seções: Instruções de execução, Decisões arquiteturais, Bibliotecas externas e justificativas, Integração Cielo Smart e Trade-offs.
+2. Formatação profissional do README com separadores e guias claros.
+3. Síntese dos conceitos de Clean Architecture e MVVM aplicados ao projeto.

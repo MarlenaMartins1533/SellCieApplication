@@ -1,61 +1,74 @@
-# 🎫 SellCie — A Revolução na Venda de Ingressos Presencial
+# 🎫 SellCie — Solução Integrada de Venda de Ingressos
 
-Bem-vindo ao **SellCie**, a solução definitiva para venda de ingressos diretamente em terminais inteligentes. Este MVP (Produto Mínimo Viável) foi desenhado para oferecer uma experiência de compra fluida, segura e totalmente integrada ao ecossistema **Cielo Smart**.
-
-## 🚀 O que é o SellCie?
-O SellCie é um aplicativo Android focado em produtores de eventos que precisam de mobilidade e agilidade. Ele transforma a maquininha de cartão em um ponto de venda completo: do catálogo de eventos à entrega do ingresso com QR Code.
-
-### Por que usar o SellCie?
-- **Agilidade no Checkout**: Seleção rápida de ingressos e cálculo automático de totais.
-- **Segurança Total**: Integração nativa com a Cielo LIO, garantindo transações criptografadas.
-- **Funcionamento Offline**: O catálogo e o histórico de compras são persistidos localmente, garantindo que você nunca perca uma venda.
-- **Experiência Digital**: Ingressos gerados na hora com identificadores únicos para validação futura.
+O **SellCie** é um ponto de venda (PDV) móvel completo, projetado para operar de forma offline e integrada aos terminais **Cielo Smart**. Ele permite a produtores de eventos gerenciar catálogos, realizar vendas seguras e entregar ingressos digitais com QR Code instantaneamente.
 
 ---
 
-## 🛠 Funcionalidades do MVP
+## 🏗 Decisões Arquiteturais
 
-### 1. Catálogo Inteligente
-Visualize seus eventos em uma interface moderna e intuitiva. Controle a quantidade de ingressos com um simples toque e tenha o resumo do pedido sempre à mão.
+A solução foi estruturada seguindo os princípios de **Clean Architecture** e o padrão **MVVM (Model-View-ViewModel)**, garantindo manutenibilidade, testabilidade e desacoplamento.
 
-### 2. Pagamento de Última Geração
-Integração via **Deep Link** com a Cielo. Ao confirmar a compra, o SellCie aciona automaticamente o módulo de pagamento da maquininha, suportando:
-- ✅ Cartão de Débito e Crédito.
-- ✅ Simulação de cenários (Saldo insuficiente, cancelamento, etc) via emulador.
-- ✅ Retorno automático com dados de NSU e Autorização.
-
-### 3. Comprovante e Gestão
-Recibos detalhados que exibem não apenas os itens comprados, mas também os dados técnicos da transação (Bandeira, NSU), garantindo transparência para o vendedor e o cliente.
-
-### 4. Meus Ingressos
-Após a aprovação, o cliente tem acesso imediato aos ingressos individuais, cada um com seu próprio QR Code (identificador único) pronto para ser validado na entrada do evento.
+- **Presentation Layer**: Implementada inteiramente em **Jetpack Compose**, utilizando o padrão *State Hoisting* e gerenciamento de estado via `StateFlow`.
+- **Domain Layer**: Contém a lógica de negócio pura (Use Cases), isolada de detalhes técnicos como banco de dados ou APIs externas.
+- **Data Layer**: Utiliza o **Repository Pattern** para abstrair as fontes de dados. A persistência é realizada em um banco de dados local, e os pagamentos são mediados por adaptadores de gateway.
+- **Offline-First**: O app prioriza o funcionamento sem rede, garantindo que o fluxo de checkout e o histórico de compras estejam sempre disponíveis.
 
 ---
 
-## 📖 Como Usar (Guia Rápido)
+## 📚 Bibliotecas Externas e Justificativas
 
-1.  **Explorar**: Abra o app e veja a lista de eventos disponíveis.
-2.  **Selecionar**: Escolha a quantidade de ingressos para cada evento.
-3.  **Confirmar**: Clique em "Continuar" para revisar seu pedido.
-4.  **Pagar**: Clique em "Confirmar Compra". O app abrirá a interface da Cielo. Passe o cartão e digite a senha.
-5.  **Receber**: Após o sucesso, veja seu comprovante detalhado.
-6.  **Acessar**: Clique em "Ver meus ingressos" para visualizar os QR Codes da sua compra.
+- **Gson (Google)**: Utilizada para a serialização e desserialização robusta dos payloads JSON exigidos pela Cielo. Escolhida pela estabilidade e facilidade de integração.
+- **g0dkar.qrcode**: Biblioteca leve e eficiente para geração de QR Codes em Kotlin. Essencial para a entrega do ingresso digital no formato MVP.
+- **Jetpack Compose Material 3**: Design system moderno do Google que permite criar UIs adaptativas e acessíveis com menos código.
+- **Coroutines & Flow**: Utilizados para operações assíncronas e processamento reativo de dados, garantindo uma UI fluida e sem travamentos.
 
 ---
 
-## 🔧 Informações para Desenvolvedores
+## 📲 Integração com Cielo Smart
 
-### Tecnologias
-- **UI**: Jetpack Compose (Material 3)
-- **Arquitetura**: MVVM + Clean Architecture
-- **Persistência**: SQLite (Local storage)
-- **Integração**: Deep Link Cielo Smart + Gson para payloads JSON.
+A integração foi realizada através do protocolo de **Deep Link**, seguindo os padrões oficiais da Cielo:
 
-### Execução de Teste (Emulador)
-Para testar a integração com a maquininha:
-1. Certifique-se de ter o **Cielo LIO Emulator** instalado.
-2. Utilize o comando: `./gradlew assembleCieloEmulator`
-3. Execute a variante de build `cieloEmulator`.
+1.  **Request**: O SellCie gera um objeto `OrderRequest`, converte para JSON via Gson e o codifica em **Base64**.
+2.  **Disparo**: Uma Intent com a URI `lio://payment?request=<BASE64>&urlCallback=sellcie://payment-result` é enviada ao sistema.
+3.  **Callback**: O app escuta o retorno em uma Activity dedicada (`PaymentResponseActivity`), que extrai o resultado (Sucesso, Erro ou Cancelamento).
+4.  **Sandbox**: O sistema mapeia os **Magic Values** (valores em centavos) para simular comportamentos específicos do terminal em ambiente de teste.
 
 ---
-**SellCie**: Vendendo experiências, simplificando pagamentos.
+
+## ⚖️ Trade-offs Considerados
+
+- **SQLite Nativo vs Room**: Optou-se pelo uso de `SQLiteOpenHelper` nativo para demonstrar domínio sobre os fundamentos de persistência do Android e manter a camada de dados leve, embora o Room fosse uma alternativa mais abstrata.
+- **Gateway Abstrato**: Criamos uma interface `PaymentGateway` que permite alternar facilmente entre o emulador da Cielo e um gateway mock (offline), facilitando o desenvolvimento sem depender de hardware físico.
+- **Comunicação por Resursos**: Refatoramos o envio de mensagens do ViewModel para a UI usando o padrão `UiText`. Isso evita o vazamento de instâncias de `Context` e respeita o ciclo de vida do Compose, em troca de uma leve complexidade inicial.
+
+---
+
+## 🚀 Instruções de Execução
+
+### Pré-requisitos
+- Android Studio Ladybug ou superior.
+- Android SDK 36 (API Level 36).
+- Java 11+.
+
+### Configuração de Credenciais
+1. Localize o arquivo `cielo.local.properties.example` na raiz do projeto.
+2. Renomeie-o para `cielo.local.properties`.
+3. Preencha seu `CIELO_CLIENT_ID` e `CIELO_ACCESS_TOKEN` (ou deixe em branco para usar os valores dummy do emulador).
+
+### Comandos de Build
+Para gerar o APK compatível com o emulador:
+```bash
+./gradlew assembleCieloEmulator
+```
+
+Para rodar os testes unitários:
+```bash
+./gradlew testDebugUnitTest
+```
+
+---
+
+## 🏁 Conclusão do MVP
+O SellCie entrega uma base sólida para um ecossistema de eventos. Com foco em **segurança**, **padronização profissional** (eliminação de magic numbers) e **excelência em UX** (scroll, mensagens claras e feedbacks técnicos), o projeto está pronto para evoluir para uma solução de larga escala.
+
+**Desenvolvido por**: Marlena Martins (com auxílio da IA Gemini 2.0 Flash)
