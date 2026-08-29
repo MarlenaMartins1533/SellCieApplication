@@ -1,6 +1,14 @@
-# 🎫 SellCie — Solução Integrada de Venda de Ingressos
+ <img src="SellCieIcon.png" width="100" alt="Logo">
+
+# SellCie  
+
+## 🎫  Solução Integrada de Venda de Ingressos
 
 O **SellCie** é um ponto de venda (PDV) móvel completo, projetado para operar de forma offline e integrada aos terminais **Cielo Smart**. Ele permite a produtores de eventos gerenciar catálogos, realizar vendas seguras e entregar ingressos digitais com QR Code instantaneamente.
+
+<img src="Cielo Ingressos.png" width="100" alt="Logo"> <img src="Ver meus ingressos.png" width="100" alt="Logo"> <img src="Ver meus ingressos end.png" width="100" alt="Logo">
+
+ <img src="Tela de controle de estoque e cadastro de eventos.png" width="100" alt="Logo"> <img src="Fragment de add e sub de ingressos dos eventos.png" width="100" alt="Logo"> <img src="Fragment de add e sub de ingressos dos eventos end.png" width="100" alt="Logo">
 
 ---
 
@@ -21,7 +29,8 @@ A solução foi estruturada seguindo os princípios de **Clean Architecture** e 
 - **g0dkar.qrcode**: Biblioteca leve e eficiente para geração de QR Codes em Kotlin. Essencial para a entrega do ingresso digital no formato MVP.
 - **Jetpack Compose Material 3**: Design system moderno do Google que permite criar UIs adaptativas e acessíveis com menos código.
 - **Coroutines & Flow**: Utilizados para operações assíncronas e processamento reativo de dados, garantindo uma UI fluida e sem travamentos.
-
+  
+<img src="Ver meus ingressos.png" width="100" alt="Logo"> <img src="Ver meus ingressos end.png" width="100" alt="Logo">
 ---
 
 ## 📲 Integração com Cielo Smart
@@ -33,6 +42,7 @@ A integração foi realizada através do protocolo de **Deep Link**, seguindo os
 3.  **Callback**: O app escuta o retorno em uma Activity dedicada (`PaymentResponseActivity`), que extrai o resultado (Sucesso, Erro ou Cancelamento).
 4.  **Sandbox**: O sistema mapeia os **Magic Values** (valores em centavos) para simular comportamentos específicos do terminal em ambiente de teste.
 
+<img src="Confirme sua compra.png" width="100" alt="Logo"> <img src="Tela de sucesso.png" width="100" alt="Logo"> <img src="Tela de cancelado pelo user.png" width="100" alt="Logo"> <img src="Tela de erro.png" width="100" alt="Logo">
 ---
 
 ## ⚖️ Trade-offs Considerados
