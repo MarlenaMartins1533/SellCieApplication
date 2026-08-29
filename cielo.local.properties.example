@@ -1,0 +1,4 @@
+# Copie este arquivo para cielo.local.properties e preencha apenas no ambiente local autorizado.
+# Nunca versione cielo.local.properties nem cole credenciais neste arquivo de exemplo.
+CIELO_CLIENT_ID=
+CIELO_ACCESS_TOKEN=

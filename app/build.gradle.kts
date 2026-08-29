@@ -1,7 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+
+val cieloProperties = Properties().apply {
+    val propertiesFile = rootProject.file("cielo.local.properties")
+    if (propertiesFile.isFile) propertiesFile.inputStream().use(::load)
+}
+
+fun String.asBuildConfigString(): String = "\"" +
+    replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n") +
+    "\""
 
 android {
     namespace = "com.marlena.martins.sellcieapplication"
@@ -21,6 +35,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,14 +52,18 @@ android {
                 "proguard-rules.pro"
             )
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
-        buildConfig = true
+        getByName("debug") {
+            buildConfigField("Boolean", "CIELO_EMULATOR_ENABLED", "false")
+            buildConfigField("String", "CIELO_CLIENT_ID", "\"\"")
+            buildConfigField("String", "CIELO_ACCESS_TOKEN", "\"\"")
+        }
+        create("cieloEmulator") {
+            initWith(getByName("debug"))
+            matchingFallbacks += listOf("debug")
+            buildConfigField("Boolean", "CIELO_EMULATOR_ENABLED", "true")
+            buildConfigField("String", "CIELO_CLIENT_ID", cieloProperties.getProperty("CIELO_CLIENT_ID", "").asBuildConfigString())
+            buildConfigField("String", "CIELO_ACCESS_TOKEN", cieloProperties.getProperty("CIELO_ACCESS_TOKEN", "").asBuildConfigString())
+        }
     }
 
 }
