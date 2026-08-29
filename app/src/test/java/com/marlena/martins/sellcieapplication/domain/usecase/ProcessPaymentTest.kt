@@ -3,6 +3,7 @@ package com.marlena.martins.sellcieapplication.domain.usecase
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
 import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
+import com.marlena.martins.sellcieapplication.domain.repository.PaymentGatewayResult
 import com.marlena.martins.sellcieapplication.domain.repository.PurchaseAttemptRepository
 import com.marlena.martins.sellcieapplication.domain.repository.StartProcessingResult
 import kotlinx.coroutines.runBlocking
@@ -42,9 +43,9 @@ class ProcessPaymentTest {
     ) : PaymentGateway {
         var callCount = 0
 
-        override suspend fun process(request: PaymentRequest): PaymentOutcome {
+        override suspend fun process(request: PaymentRequest): PaymentGatewayResult {
             callCount += 1
-            return outcome
+            return PaymentGatewayResult(outcome)
         }
     }
 
@@ -65,12 +66,13 @@ class ProcessPaymentTest {
             )
         }
 
-        override suspend fun complete(purchaseId: String, outcome: PaymentOutcome) =
+        override suspend fun complete(purchaseId: String, outcome: PaymentOutcome, metadata: Map<String, String>) =
             com.marlena.martins.sellcieapplication.domain.model.PurchaseAttempt(
                 purchaseId = purchaseId,
                 totalInCents = 2500,
                 status = outcome.toStatus(),
-                outcome = outcome
+                outcome = outcome,
+                cieloMetadata = metadata
             ).also { finalOutcome = outcome }
 
         private fun PaymentOutcome.toStatus() = when (this) {

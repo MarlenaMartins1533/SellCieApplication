@@ -33,6 +33,22 @@ class LocalPurchaseAttemptRepositoryTest {
     }
 
     @Test
+    fun persistsMetadataAndRecoversIt() = runBlocking {
+        val repository = LocalPurchaseAttemptRepository(context)
+        val request = PaymentRequest("purchase-meta", 1000)
+        val metadata = mapOf(
+            CieloConstants.KEY_BRAND to "Mastercard",
+            CieloConstants.KEY_CIELO_CODE to "123456"
+        )
+        
+        repository.startProcessing(request)
+        repository.complete(request.purchaseId, PaymentOutcome.Approved, metadata)
+        
+        val recovered = repository.get(request.purchaseId)
+        assertEquals(metadata, recovered?.cieloMetadata)
+    }
+
+    @Test
     fun persistsEveryItemInThePurchaseReceipt() = runBlocking {
         val repository = LocalPurchaseAttemptRepository(context)
         val request = PaymentRequest(

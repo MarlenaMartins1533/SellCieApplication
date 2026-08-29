@@ -5,6 +5,7 @@ import com.marlena.martins.sellcieapplication.data.payment.InMemoryPurchaseAttem
 import com.marlena.martins.sellcieapplication.domain.model.PaymentOutcome
 import com.marlena.martins.sellcieapplication.domain.repository.EventRepository
 import com.marlena.martins.sellcieapplication.domain.repository.PaymentGateway
+import com.marlena.martins.sellcieapplication.domain.repository.PaymentGatewayResult
 import com.marlena.martins.sellcieapplication.domain.usecase.CalculateOrderTotal
 import com.marlena.martins.sellcieapplication.domain.usecase.ProcessPayment
 import org.junit.Assert.assertEquals
@@ -23,9 +24,9 @@ class TicketViewModelTest {
                 paymentGateway = object : PaymentGateway {
                     override suspend fun process(
                         request: com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
-                    ): PaymentOutcome {
+                    ): PaymentGatewayResult {
                         gatewayCalls += 1
-                        return PaymentOutcome.Approved
+                        return PaymentGatewayResult(PaymentOutcome.Approved)
                     }
                 }
             )
@@ -155,7 +156,7 @@ class TicketViewModelTest {
         paymentGateway = object : PaymentGateway {
             override suspend fun process(
                 request: com.marlena.martins.sellcieapplication.domain.model.PaymentRequest
-            ) = PaymentOutcome.Approved
+            ) = PaymentGatewayResult(PaymentOutcome.Approved)
         }
     )
 
